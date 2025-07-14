@@ -1,4 +1,6 @@
-package dev.gurwi.confetti;
+package dev.gurwi.confetti.configuration.base;
+
+import java.lang.reflect.Type;
 
 public interface ConfigurationSection {
 
@@ -18,9 +20,17 @@ public interface ConfigurationSection {
 
     boolean getBoolean(String path);
 
-    Object get(String path);
+    Object get(String path, Object defaultValue);
+
+    default Object get(String path) {
+        return get(path, null);
+    }
 
     <T> T get(String path, Class<T> type);
+
+    ConfigurationSection set(String path, Object value);
+
+    <T> T get(String path, Class<T> type, Type genericType);
 
     ConfigurationSection getConfigurationSection(String path);
 

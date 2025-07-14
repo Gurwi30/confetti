@@ -7,12 +7,8 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface Config {
+public @interface ResourceConfig {
 
     String value();
-
-    String defaultResource() default "";
-
-    boolean autoSave() default false;
 
 }

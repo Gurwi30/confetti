@@ -2,17 +2,25 @@ package dev.gurwi.confetti;
 
 import dev.gurwi.confetti.annotation.Config;
 import dev.gurwi.confetti.annotation.Path;
+import dev.gurwi.confetti.annotation.ResourceConfig;
+import dev.gurwi.confetti.configuration.base.Configuration;
+import dev.gurwi.confetti.configuration.FileConfiguration;
+import dev.gurwi.confetti.configuration.ResourceConfiguration;
 import dev.gurwi.confetti.serde.YamlDeserializer;
+import dev.gurwi.confetti.serde.internal.ReflectiveYamlDeserializer;
+import dev.gurwi.confetti.serde.internal.ReflectiveYamlSerializer;
 import dev.gurwi.confetti.serde.internal.YamlMapperRegistry;
 import dev.gurwi.confetti.serde.YamlSerDe;
 import dev.gurwi.confetti.serde.YamlSerializer;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,50 +44,75 @@ public final class Confetti {
         return this;
     }
 
-    @Contract("_ -> new")
-    public @NotNull ResourceConfig fromResource(String path) {
-        return new ResourceConfig(this, path);
+    public <T> YamlSerializer<T> getSerializer(Class<T> type) {
+        return mapperRegistry.getSerializer(type).orElse(new ReflectiveYamlSerializer<>(type));
+    }
+
+    public <T> YamlDeserializer<T> getDeserializer(Class<T> type, Type genericType) {
+        return mapperRegistry.getDeserializer(type)
+                .orElse(new ReflectiveYamlDeserializer<>(type, genericType));
+    }
+
+    public <T> YamlDeserializer<T> getDeserializer(Class<T> type) {
+        return mapperRegistry.getDeserializer(type)
+                .orElse(new ReflectiveYamlDeserializer<>(type));
     }
 
     @Contract("_ -> new")
-    public @NotNull ReloadableConfig fromFile(File file) {
-        return new ReloadableConfig(this, file);
+    public @NotNull Configuration fromResource(String path) {
+        return new ResourceConfiguration(this, path);
     }
 
     @Contract("_ -> new")
-    public @NotNull ReloadableConfig fromFile(String path) {
+    public @NotNull Configuration fromFile(File file) {
+        return new FileConfiguration(this, file);
+    }
+
+    @Contract("_ -> new")
+    public @NotNull Configuration fromFile(String path) {
         return fromFile(new File(path));
     }
 
-    public @NotNull Configuration load(@NotNull Class<?> clazz) {
+    public @NotNull Configuration load(@NotNull Class<?> clazz, @Nullable File parentFolder) {
         Config configAnno = clazz.getAnnotation(Config.class);
+        ResourceConfig resourceConfigAnno = clazz.getAnnotation(ResourceConfig.class);
 
-        if (configAnno == null) {
-            throw new IllegalArgumentException("Class " + clazz + " has no @Config annotation");
+        if (configAnno == null && resourceConfigAnno == null) {
+            throw new IllegalArgumentException("Class " + clazz.getName() +
+                    " must be annotated with either @Config or @ResourceConfig");
         }
 
-        Configuration config = configAnno.resourceConfig()
-                ? fromResource(configAnno.value())
-                : fromFile(configAnno.value());
+        if (configAnno != null && resourceConfigAnno != null) {
+            throw new IllegalArgumentException("Class " + clazz.getName() +
+                    " cannot be annotated with both @Config and @ResourceConfig");
+        }
+
+        Configuration config = resourceConfigAnno != null
+                ? fromResource(resourceConfigAnno.value())
+                : parentFolder != null ? fromFile(new File(parentFolder, configAnno.value())) : fromFile(configAnno.value());
 
         for (Field field : clazz.getFields()) {
-            if (Modifier.isFinal(field.getModifiers())) continue;
-            if (!Modifier.isStatic(field.getModifiers())) continue;
+            int fieldModifiers = field.getModifiers();
+
+            if (Modifier.isFinal(fieldModifiers)) continue;
+            if (!Modifier.isStatic(fieldModifiers)) continue;
 
             if (!field.isAnnotationPresent(Path.class)) continue;
 
-            boolean isPublic = Modifier.isPublic(field.getModifiers());
+            boolean isPublic = Modifier.isPublic(fieldModifiers);
 
             if (!isPublic) field.setAccessible(true);
 
             Path pathAnno = field.getAnnotation(Path.class);
             Class<?> type = field.getType();
-            Object value = config.get(pathAnno.value(), type);
+            Object value = config.get(pathAnno.value(), type, field.getGenericType());
 
-            try {
-                field.set(null, value);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+            if (value != null) {
+                try {
+                    field.set(null, value);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             if (!isPublic) field.setAccessible(false);
@@ -89,9 +122,13 @@ public final class Confetti {
         return config;
     }
 
+    public @NotNull Configuration load(@NotNull Class<?> clazz) {
+        return load(clazz, null);
+    }
+
     public void reloadAll() {
-        getFromType(ReloadableConfig.class)
-                .forEach(ReloadableConfig::reload);
+        getFromType(FileConfiguration.class)
+                .forEach(FileConfiguration::reload);
     }
 
     public @NotNull Optional<Configuration> get(String path) {

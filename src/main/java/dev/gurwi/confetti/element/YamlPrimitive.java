@@ -1,6 +1,6 @@
 package dev.gurwi.confetti.element;
 
-public class YamlPrimitive {
+public class YamlPrimitive implements YamlElement {
 
     private final Object value;
 
@@ -10,6 +10,10 @@ public class YamlPrimitive {
 
     public Object getValue() {
         return value;
+    }
+
+    public String toString() {
+        return String.valueOf(value);
     }
 
 }
