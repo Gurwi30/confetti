@@ -1,8 +1,11 @@
 package dev.gurwi.confetti;
 
+import dev.gurwi.confetti.configuration.base.Configuration;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class ConfettiTest {
 
@@ -11,11 +14,18 @@ class ConfettiTest {
         Confetti confetti = new Confetti();
         confetti.load(TestConfig.class);
 
-        System.out.println(TestConfig.TEST);
-        System.out.println(Arrays.toString(TestConfig.ARRAY));
+        assertEquals("10", TestConfig.TEST, "TestConfig.TEST should be '10'");
+        assertIterableEquals(List.of("a", "b", "c"), TestConfig.ARRAY, "TestConfig.ARRAY contents mismatch");
+    }
 
-//        assert TestConfig.TEST.equals("10");
-//        assert Arrays.equals(TestConfig.ARRAY, new String[]{"a", "b", "c"});
+    @Test
+    void recordDeserializer() {
+        Confetti confetti = new Confetti();
+        Configuration cfg = confetti.load(TestConfig.class);
+        Something something = cfg.get("object", Something.class);
+
+        assertNotNull(something, "Something is null");
+        assertEquals(10, something.something());
     }
 
 }

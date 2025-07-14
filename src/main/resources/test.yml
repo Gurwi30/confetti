@@ -3,3 +3,6 @@ array:
   - "a"
   - "b"
   - "c"
+
+object:
+  something: 10

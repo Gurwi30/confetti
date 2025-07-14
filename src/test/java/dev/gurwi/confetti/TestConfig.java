@@ -3,6 +3,9 @@ package dev.gurwi.confetti;
 import dev.gurwi.confetti.annotation.Path;
 import dev.gurwi.confetti.annotation.ResourceConfig;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @ResourceConfig("test.yml")
 public class TestConfig {
 
@@ -10,6 +13,6 @@ public class TestConfig {
     public static String TEST = "default";
 
     @Path("array")
-    public static String[] ARRAY = {"one", "two", "three"};
+    public static List<String> ARRAY = new ArrayList<>();
 
 }

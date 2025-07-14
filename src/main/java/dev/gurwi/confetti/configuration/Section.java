@@ -67,12 +67,7 @@ public class Section implements ConfigurationSection {
 
     @Override
     public <T> T get(String path, Class<T> type) {
-        YamlElement value = data.get(path);
-
-        if (value == null) return null;
-
-        return confetti.getDeserializer(type)
-                .deserialize(value);
+        return get(path, type, type);
     }
 
     @Override

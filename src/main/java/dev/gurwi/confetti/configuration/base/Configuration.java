@@ -90,7 +90,7 @@ public abstract class Configuration implements ConfigurationSection {
 
     @Override
     public <T> T get(String path, Class<T> type) {
-        return section.get(path, type);
+        return get(path, type, type);
     }
 
     @Override

@@ -2,6 +2,7 @@ package dev.gurwi.confetti.configuration;
 
 import dev.gurwi.confetti.Confetti;
 import dev.gurwi.confetti.configuration.base.Configuration;
+import dev.gurwi.confetti.configuration.base.ConfigurationSection;
 import dev.gurwi.confetti.element.YamlElement;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,6 +33,16 @@ public class ResourceConfiguration extends Configuration {
     @Override
     public void save() {
 
+    }
+
+    @Override
+    public ConfigurationSection set(String path, Object value) {
+        return this;
+    }
+
+    @Override
+    public ConfigurationSection createSection(String path) {
+        return this;
     }
 
 }
