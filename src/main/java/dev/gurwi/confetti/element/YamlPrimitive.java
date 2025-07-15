@@ -8,6 +8,11 @@ public class YamlPrimitive implements YamlElement {
         this.value = value;
     }
 
+    @Override
+    public boolean isEmpty() {
+        return value == null;
+    }
+
     public Object getValue() {
         return value;
     }
@@ -15,10 +20,6 @@ public class YamlPrimitive implements YamlElement {
     public <T> T getUnchecked() {
         //noinspection unchecked
         return (T) value;
-    }
-
-    public boolean isNull() {
-        return value == null;
     }
 
     @Override

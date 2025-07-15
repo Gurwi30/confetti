@@ -46,6 +46,8 @@ public interface YamlElement {
         };
     }
 
+    boolean isEmpty();
+
     default boolean isObject() {
         return this instanceof YamlObject;
     }

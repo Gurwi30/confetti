@@ -1,5 +1,7 @@
 package dev.gurwi.confetti.configuration.base;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.lang.reflect.Type;
 
 public interface ConfigurationSection {
@@ -8,17 +10,17 @@ public interface ConfigurationSection {
 
     boolean exists(String path);
 
-    String getString(String path);
+    @Nullable String getString(String path);
 
-    int getInt(String path);
+    @Nullable Integer getInt(String path);
 
-    long getLong(String path);
+    @Nullable Long getLong(String path);
 
-    double getDouble(String path);
+    @Nullable Double getDouble(String path);
 
-    float getFloat(String path);
+    @Nullable Float getFloat(String path);
 
-    boolean getBoolean(String path);
+    @Nullable Boolean getBool(String path);
 
     Object get(String path, Object defaultValue);
 
@@ -26,13 +28,13 @@ public interface ConfigurationSection {
         return get(path, Object.class);
     }
 
-    <T> T get(String path, Class<T> type);
+    @Nullable <T> T get(String path, Class<T> type);
 
     ConfigurationSection set(String path, Object value);
 
-    <T> T get(String path, Class<T> type, Type genericType);
+    @Nullable <T> T get(String path, Class<T> type, Type genericType);
 
-    ConfigurationSection getConfigurationSection(String path);
+    @Nullable ConfigurationSection getConfigurationSection(String path);
 
     ConfigurationSection createSection(String path);
 

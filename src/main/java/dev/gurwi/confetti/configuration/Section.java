@@ -25,42 +25,67 @@ public class Section implements ConfigurationSection {
 
     @Override
     public boolean isEmpty(String path) {
-        return false;
+        YamlElement element = resolvePath(path);
+        return element == null || element.isEmpty();
     }
 
     @Override
     public boolean exists(String path) {
-        return false;
+        return resolvePath(path) != null;
     }
 
     @Override
-    public String getString(String path) {
-        return "";
+    public @Nullable String getString(String path) {
+        YamlElement element = resolvePath(path);
+        if (element == null) return null;
+
+        Object value = element.asPrimitive().getUnchecked();
+        return value != null ? value.toString() : null;
     }
 
     @Override
-    public int getInt(String path) {
-        return 0;
+    public @Nullable Integer getInt(String path) {
+        YamlElement element = resolvePath(path);
+        if (element == null) return null;
+
+        Object value = element.asPrimitive().getUnchecked();
+        return value instanceof Number number ? number.intValue() : null;
     }
 
     @Override
-    public long getLong(String path) {
-        return 0;
+    public @Nullable Long getLong(String path) {
+        YamlElement element = resolvePath(path);
+        if (element == null) return null;
+
+        Object value = element.asPrimitive().getUnchecked();
+        return value instanceof Number number ? number.longValue() : null;
     }
 
     @Override
-    public double getDouble(String path) {
-        return 0;
+    public @Nullable Double getDouble(String path) {
+        YamlElement element = resolvePath(path);
+        if (element == null) return null;
+
+        Object value = element.asPrimitive().getUnchecked();
+        return value instanceof Number number ? number.doubleValue() : null;
     }
 
     @Override
-    public float getFloat(String path) {
-        return 0;
+    public @Nullable Float getFloat(String path) {
+        YamlElement element = resolvePath(path);
+        if (element == null) return null;
+
+        Object value = element.asPrimitive().getUnchecked();
+        return value instanceof Number number ? number.floatValue() : null;
     }
 
     @Override
-    public boolean getBoolean(String path) {
-        return false;
+    public @Nullable Boolean getBool(String path) {
+        YamlElement element = resolvePath(path);
+        if (element == null) return null;
+
+        Object value = element.asPrimitive().getUnchecked();
+        return value instanceof Boolean bool ? bool : null;
     }
 
     @Override
@@ -97,6 +122,10 @@ public class Section implements ConfigurationSection {
     @Override
     public ConfigurationSection createSection(String path) {
         return null;
+    }
+
+    public Configuration getRoot() {
+        return root;
     }
 
     private @Nullable YamlElement resolvePath(@NotNull String path) {

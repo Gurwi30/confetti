@@ -4,6 +4,7 @@ import dev.gurwi.confetti.Confetti;
 import dev.gurwi.confetti.configuration.Section;
 import dev.gurwi.confetti.element.YamlElement;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.Yaml;
 
 import java.lang.reflect.Type;
@@ -44,47 +45,47 @@ public abstract class Configuration implements ConfigurationSection {
     }
 
     @Override
-    public String getString(String path) {
+    public @Nullable String getString(String path) {
         return section.getString(path);
     }
 
     @Override
-    public int getInt(String path) {
+    public @Nullable Integer getInt(String path) {
         return section.getInt(path);
     }
 
     @Override
-    public long getLong(String path) {
+    public @Nullable Long getLong(String path) {
         return section.getLong(path);
     }
 
     @Override
-    public double getDouble(String path) {
+    public @Nullable Double getDouble(String path) {
         return section.getDouble(path);
     }
 
     @Override
-    public float getFloat(String path) {
+    public @Nullable Float getFloat(String path) {
         return section.getFloat(path);
     }
 
     @Override
-    public boolean getBoolean(String path) {
-        return section.getBoolean(path);
+    public @Nullable Boolean getBool(String path) {
+        return section.getBool(path);
     }
 
     @Override
-    public Object get(String path) {
+    public @Nullable Object get(String path) {
         return section.get(path);
     }
 
     @Override
-    public <T> T get(String path, Class<T> type) {
+    public @Nullable <T> T get(String path, Class<T> type) {
         return get(path, type, type);
     }
 
     @Override
-    public <T> T get(String path, Class<T> type, Type genericType) {
+    public @Nullable <T> T get(String path, Class<T> type, Type genericType) {
         return section.get(path, type, genericType);
     }
 
@@ -94,7 +95,7 @@ public abstract class Configuration implements ConfigurationSection {
     }
 
     @Override
-    public ConfigurationSection getConfigurationSection(String path) {
+    public @Nullable ConfigurationSection getConfigurationSection(String path) {
         return section.getConfigurationSection(path);
     }
 

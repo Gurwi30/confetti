@@ -14,6 +14,11 @@ public class YamlArray implements YamlElement, Iterable<YamlElement> {
     }
 
     @Override
+    public boolean isEmpty() {
+        return elements.isEmpty();
+    }
+
+    @Override
     public @NotNull Iterator<YamlElement> iterator() {
         return elements.iterator();
     }
