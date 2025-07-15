@@ -22,11 +22,16 @@ public abstract class Configuration implements ConfigurationSection {
         this.confetti = confetti;
         this.path = path;
         this.yaml = new Yaml();
-        this.data = loadData();
-        this.section = new Section(confetti, this, data);
     }
 
     protected abstract @NotNull Map<String, YamlElement> loadData();
+
+    public Configuration load() {
+        this.data = loadData();
+        this.section = new Section(confetti, this, data);
+
+        return this;
+    }
 
     @Override
     public boolean isEmpty(String path) {
@@ -84,6 +89,11 @@ public abstract class Configuration implements ConfigurationSection {
     }
 
     @Override
+    public Object get(String path, Object defaultValue) {
+        return section.get(path, defaultValue);
+    }
+
+    @Override
     public ConfigurationSection getConfigurationSection(String path) {
         return section.getConfigurationSection(path);
     }
@@ -91,11 +101,6 @@ public abstract class Configuration implements ConfigurationSection {
     @Override
     public ConfigurationSection createSection(String path) {
         return section.createSection(path);
-    }
-
-    @Override
-    public Object get(String path, Object defaultValue) {
-        return section.get(path, defaultValue);
     }
 
     @Override

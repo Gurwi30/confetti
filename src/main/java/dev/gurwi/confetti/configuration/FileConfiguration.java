@@ -2,20 +2,25 @@ package dev.gurwi.confetti.configuration;
 
 import dev.gurwi.confetti.Confetti;
 import dev.gurwi.confetti.configuration.base.Configuration;
+import dev.gurwi.confetti.configuration.base.ConfigurationSection;
 import dev.gurwi.confetti.element.YamlElement;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Map;
 
 public class FileConfiguration extends Configuration {
 
     private final File file;
+
+    private String defaultResource = null;
     private boolean autoSave = false;
 
     public FileConfiguration(Confetti confetti, @NotNull File file) {
         super(confetti, file.getPath());
+
         this.file = file;
     }
 
@@ -24,8 +29,16 @@ public class FileConfiguration extends Configuration {
         return this;
     }
 
+    public FileConfiguration withDefaultResource(String defaultResource) {
+        this.defaultResource = defaultResource;
+        return this;
+    }
+
     @Override
     protected @NotNull Map<String, YamlElement> loadData() {
+        if (!file.exists()) file.mkdirs();
+        if (defaultResource != null) copyDefaultResource(defaultResource, file);
+
         try (InputStream in = new FileInputStream(file)) {
             return YamlElement.adapt(yaml.load(in));
         } catch (IOException e) {
@@ -44,6 +57,38 @@ public class FileConfiguration extends Configuration {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public ConfigurationSection set(String path, Object value) {
+        super.set(path, value);
+        runAutoSave();
+
+        return this;
+    }
+
+    @Override
+    public ConfigurationSection createSection(String path) {
+        ConfigurationSection ret = super.createSection(path);
+        runAutoSave();
+
+        return ret;
+    }
+
+    private void copyDefaultResource(String resourceName, File targetFile) {
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream(resourceName)) {
+            if (in == null) {
+                throw new FileNotFoundException("Resource not found in classpath: " + resourceName);
+            }
+
+            Files.copy(in, targetFile.toPath());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to copy default resource: " + resourceName, e);
+        }
+    }
+
+    private void runAutoSave() {
+        if (autoSave) save();
     }
 
 }

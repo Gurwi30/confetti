@@ -74,6 +74,11 @@ public final class Confetti {
         return fromFile(new File(path));
     }
 
+    @Contract("_, _ -> new")
+    public @NotNull FileConfiguration fromFile(String path, File parent) {
+        return fromFile(new File(parent, path));
+    }
+
     public Confetti loadIntoClass(@NotNull Class<?> clazz, Configuration config) {
         for (Field field : clazz.getFields()) {
             int fieldModifiers = field.getModifiers();
@@ -126,7 +131,8 @@ public final class Confetti {
         Configuration config = resourceConfigAnno != null
                 ? fromResource(resourceConfigAnno.value())
                 : (parentFolder != null ? fromFile(new File(parentFolder, configAnno.value())) : fromFile(configAnno.value()))
-                    .withAutoSave(configAnno.autoSave());
+                .withAutoSave(configAnno.autoSave())
+                .withDefaultResource(configAnno.defaultResource());
 
         configurations.put(config.getPath(), config);
 
