@@ -6,3 +6,7 @@ array:
 
 object:
   something: 10
+
+nested:
+  value-1: 10
+  value-2: 20

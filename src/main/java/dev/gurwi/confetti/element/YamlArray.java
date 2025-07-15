@@ -18,6 +18,16 @@ public class YamlArray implements YamlElement, Iterable<YamlElement> {
         return elements.iterator();
     }
 
+    public YamlArray add(@NotNull YamlElement element) {
+        elements.add(element);
+        return this;
+    }
+
+    public YamlArray insert(int index, @NotNull YamlElement element) {
+        elements.add(index, element);
+        return this;
+    }
+
     public int size() {
         return elements.size();
     }

@@ -4,6 +4,9 @@ import dev.gurwi.confetti.Confetti;
 import dev.gurwi.confetti.configuration.base.Configuration;
 import dev.gurwi.confetti.configuration.base.ConfigurationSection;
 import dev.gurwi.confetti.element.YamlElement;
+import dev.gurwi.confetti.element.YamlObject;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -62,7 +65,8 @@ public class Section implements ConfigurationSection {
 
     @Override
     public Object get(String path, Object defaultValue) {
-        return data.get(path).asPrimitive().getValue();
+        Object value = get(path);
+        return value == null ? defaultValue : value;
     }
 
     @Override
@@ -72,7 +76,7 @@ public class Section implements ConfigurationSection {
 
     @Override
     public <T> T get(String path, Class<T> type, Type genericType) {
-        YamlElement value = data.get(path);
+        YamlElement value = resolvePath(path);
 
         if (value == null) return null;
 
@@ -93,6 +97,24 @@ public class Section implements ConfigurationSection {
     @Override
     public ConfigurationSection createSection(String path) {
         return null;
+    }
+
+    private @Nullable YamlElement resolvePath(@NotNull String path) {
+        String[] parts = path.split("\\.");
+        YamlElement current = data.get(parts[0]);
+
+        for (int i = 1; i < parts.length; i++) {
+            if (!(current instanceof YamlObject obj)) {
+                return null;
+            }
+
+            current = obj.get(parts[i]);
+            if (current == null) {
+                return null;
+            }
+        }
+
+        return current;
     }
 
 }

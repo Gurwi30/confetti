@@ -15,4 +15,7 @@ public class TestConfig {
     @Path("array")
     public static List<String> ARRAY = new ArrayList<>();
 
+    @Path("nested.value-1")
+    public static Integer NESTED_VALUE_1;
+
 }

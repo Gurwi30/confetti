@@ -6,6 +6,7 @@ import dev.gurwi.confetti.element.YamlElement;
 import dev.gurwi.confetti.element.YamlObject;
 import dev.gurwi.confetti.element.YamlPrimitive;
 import dev.gurwi.confetti.serde.YamlDeserializer;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.*;
@@ -27,6 +28,11 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
 
     @Override
     public T deserialize(@NotNull YamlElement node) {
+        if (YamlElement.class.isAssignableFrom(type)) {
+            //noinspection unchecked
+            return (T) node;
+        }
+
         return switch (node) {
             case YamlPrimitive primitive -> //noinspection unchecked
                     (T) primitive.getValue();
@@ -109,11 +115,7 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
         throw new IllegalArgumentException("Unsupported array/collection type: " + type.getName());
     }
 
-    private @NotNull T deserializeRecord(YamlElement node) {
-        if (!(node instanceof YamlObject yamlObject)) {
-            throw new IllegalArgumentException("Expected YamlObject to deserialize record " + type.getName());
-        }
-
+    private @NotNull T deserializeRecord(YamlObject node) {
         try {
             RecordComponent[] components = type.getRecordComponents();
             Object[] args = new Object[components.length];
@@ -125,16 +127,17 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
 
                 Field backingField = type.getDeclaredField(comp.getName());
                 Path pathAnno = backingField.getAnnotation(Path.class);
-
                 String yamlKey = pathAnno != null ? pathAnno.value() : comp.getName();
 
-                YamlElement valueNode = yamlObject.get(yamlKey);
+                YamlElement valueNode = node.get(yamlKey);
 
-                if (valueNode == null) {
-                    throw new IllegalArgumentException("Missing key in YAML for: " + yamlKey);
+                Object value = null;
+                if (valueNode == null && comp.getType().isPrimitive()) value = getPrimitiveDefault(comp.getType());
+                else if (valueNode != null) {
+                    value = new ReflectiveYamlDeserializer<>(comp.getType(), comp.getGenericType())
+                            .deserialize(valueNode);
                 }
 
-                Object value = new ReflectiveYamlDeserializer<>(comp.getType()).deserialize(valueNode);
                 args[i] = value;
             }
 
@@ -143,15 +146,11 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
             return ctor.newInstance(args);
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to deserialize record: " + type.getName(), e);
+            throw new RuntimeException("Failed to deserialize record " + node.getClass().getName() + " into " + type.getName(), e);
         }
     }
 
-    private @NotNull T deserializeClass(YamlElement node) {
-        if (!(node instanceof YamlObject yamlObject)) {
-            throw new IllegalArgumentException("Expected YamlObject to deserialize class " + type.getName());
-        }
-
+    private @NotNull T deserializeClass(YamlObject node) {
         try {
             T instance = type.getDeclaredConstructor().newInstance();
 
@@ -161,15 +160,18 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
                 Path pathAnno = field.getAnnotation(Path.class);
                 String yamlKey = pathAnno.value();
 
-                YamlElement valueNode = yamlObject.get(yamlKey);
-                if (valueNode == null) {
-                    throw new IllegalArgumentException("Missing key in YAML for: " + yamlKey);
-                }
+                YamlElement valueNode = node.get(yamlKey);
 
                 boolean wasAccessible = field.canAccess(instance);
                 if (!wasAccessible) field.setAccessible(true);
 
-                Object value = new ReflectiveYamlDeserializer<>(field.getType()).deserialize(valueNode);
+                Object value = null;
+                if (valueNode == null && field.getType().isPrimitive()) value = getPrimitiveDefault(field.getType());
+                else if (valueNode != null) {
+                    value = new ReflectiveYamlDeserializer<>(field.getType(), field.getGenericType())
+                            .deserialize(valueNode);
+                }
+
                 field.set(instance, value);
 
                 if (!wasAccessible) field.setAccessible(false);
@@ -178,8 +180,19 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
             return instance;
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to deserialize class: " + type.getName(), e);
+            throw new RuntimeException("Failed to deserialize class " + node.getClass().getName() + " into " + type.getName(), e);
         }
+    }
+
+    @Contract(pure = true)
+    private static @NotNull Object getPrimitiveDefault(Class<?> type) {
+        if (type == boolean.class) return false;
+        if (type == char.class) return '\0';
+        if (type == byte.class || type == short.class || type == int.class) return 0;
+        if (type == long.class) return 0L;
+        if (type == float.class) return 0.0f;
+        if (type == double.class) return 0.0d;
+        throw new IllegalArgumentException("Unsupported primitive type: " + type);
     }
 
 }

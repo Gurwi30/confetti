@@ -12,6 +12,16 @@ public class YamlPrimitive implements YamlElement {
         return value;
     }
 
+    public <T> T getUnchecked() {
+        //noinspection unchecked
+        return (T) value;
+    }
+
+    public boolean isNull() {
+        return value == null;
+    }
+
+    @Override
     public String toString() {
         return String.valueOf(value);
     }

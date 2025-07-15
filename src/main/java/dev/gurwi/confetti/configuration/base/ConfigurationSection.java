@@ -23,7 +23,7 @@ public interface ConfigurationSection {
     Object get(String path, Object defaultValue);
 
     default Object get(String path) {
-        return get(path, null);
+        return get(path, Object.class);
     }
 
     <T> T get(String path, Class<T> type);
