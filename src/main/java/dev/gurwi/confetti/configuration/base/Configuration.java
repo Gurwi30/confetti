@@ -6,9 +6,7 @@ import dev.gurwi.confetti.element.YamlElement;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public abstract class Configuration implements ConfigurationSection {
@@ -29,19 +27,6 @@ public abstract class Configuration implements ConfigurationSection {
     }
 
     protected abstract @NotNull Map<String, YamlElement> loadData();
-
-    public void reload() {
-        this.data = loadData();
-        this.section = new Section(confetti, this, data);
-    }
-
-    public void save() {
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(path), StandardCharsets.UTF_8)) {
-            yaml.dump(data, writer);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public boolean isEmpty(String path) {

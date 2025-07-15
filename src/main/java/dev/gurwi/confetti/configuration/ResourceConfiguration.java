@@ -26,16 +26,6 @@ public class ResourceConfiguration extends Configuration {
     }
 
     @Override
-    public void reload() {
-
-    }
-
-    @Override
-    public void save() {
-
-    }
-
-    @Override
     public ConfigurationSection set(String path, Object value) {
         return this;
     }

@@ -28,6 +28,7 @@ public final class Confetti {
 
     private final YamlMapperRegistry mapperRegistry = new YamlMapperRegistry();
     private final Map<String, Configuration> configurations = new HashMap<>();
+    private final Map<Class<?>, FileConfiguration> fileConfigurationClasses = new HashMap<>();
 
     public <T> Confetti registerSerializer(Class<T> type, YamlSerializer<T> serializer) {
         mapperRegistry.registerSerializer(type, serializer);
@@ -59,38 +60,21 @@ public final class Confetti {
     }
 
     @Contract("_ -> new")
-    public @NotNull Configuration fromResource(String path) {
+    public @NotNull ResourceConfiguration fromResource(String path) {
         return new ResourceConfiguration(this, path);
     }
 
     @Contract("_ -> new")
-    public @NotNull Configuration fromFile(File file) {
+    public @NotNull FileConfiguration fromFile(File file) {
         return new FileConfiguration(this, file);
     }
 
     @Contract("_ -> new")
-    public @NotNull Configuration fromFile(String path) {
+    public @NotNull FileConfiguration fromFile(String path) {
         return fromFile(new File(path));
     }
 
-    public @NotNull Configuration load(@NotNull Class<?> clazz, @Nullable File parentFolder) {
-        Config configAnno = clazz.getAnnotation(Config.class);
-        ResourceConfig resourceConfigAnno = clazz.getAnnotation(ResourceConfig.class);
-
-        if (configAnno == null && resourceConfigAnno == null) {
-            throw new IllegalArgumentException("Class " + clazz.getName() +
-                    " must be annotated with either @Config or @ResourceConfig");
-        }
-
-        if (configAnno != null && resourceConfigAnno != null) {
-            throw new IllegalArgumentException("Class " + clazz.getName() +
-                    " cannot be annotated with both @Config and @ResourceConfig");
-        }
-
-        Configuration config = resourceConfigAnno != null
-                ? fromResource(resourceConfigAnno.value())
-                : parentFolder != null ? fromFile(new File(parentFolder, configAnno.value())) : fromFile(configAnno.value());
-
+    public Confetti loadIntoClass(@NotNull Class<?> clazz, Configuration config) {
         for (Field field : clazz.getFields()) {
             int fieldModifiers = field.getModifiers();
 
@@ -118,7 +102,36 @@ public final class Confetti {
             if (!isPublic) field.setAccessible(false);
         }
 
+        if (config instanceof FileConfiguration fileConfig) {
+            fileConfigurationClasses.put(config.getClass(), fileConfig);
+        }
+
+        return this;
+    }
+
+    public @NotNull Configuration load(@NotNull Class<?> clazz, @Nullable File parentFolder) {
+        Config configAnno = clazz.getAnnotation(Config.class);
+        ResourceConfig resourceConfigAnno = clazz.getAnnotation(ResourceConfig.class);
+
+        if (configAnno == null && resourceConfigAnno == null) {
+            throw new IllegalArgumentException("Class " + clazz.getName() +
+                    " must be annotated with either @Config or @ResourceConfig");
+        }
+
+        if (configAnno != null && resourceConfigAnno != null) {
+            throw new IllegalArgumentException("Class " + clazz.getName() +
+                    " cannot be annotated with both @Config and @ResourceConfig");
+        }
+
+        Configuration config = resourceConfigAnno != null
+                ? fromResource(resourceConfigAnno.value())
+                : (parentFolder != null ? fromFile(new File(parentFolder, configAnno.value())) : fromFile(configAnno.value()))
+                    .withAutoSave(configAnno.autoSave());
+
         configurations.put(config.getPath(), config);
+
+        loadIntoClass(clazz, config);
+
         return config;
     }
 
@@ -129,6 +142,8 @@ public final class Confetti {
     public void reloadAll() {
         getFromType(FileConfiguration.class)
                 .forEach(FileConfiguration::reload);
+
+        fileConfigurationClasses.forEach(this::loadIntoClass);
     }
 
     public @NotNull Optional<Configuration> get(String path) {
