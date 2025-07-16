@@ -3,8 +3,10 @@ package dev.gurwi.confetti.configuration.base;
 import dev.gurwi.confetti.Confetti;
 import dev.gurwi.confetti.configuration.Section;
 import dev.gurwi.confetti.element.YamlElement;
+import dev.gurwi.confetti.element.rapresenter.YamlElementRepresenter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.lang.reflect.Type;
@@ -22,7 +24,11 @@ public abstract class Configuration implements ConfigurationSection {
     public Configuration(Confetti confetti, String path) {
         this.confetti = confetti;
         this.path = path;
-        this.yaml = new Yaml();
+
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+
+        this.yaml = new Yaml(new YamlElementRepresenter(options), options);
     }
 
     protected abstract @NotNull Map<String, YamlElement> loadData();

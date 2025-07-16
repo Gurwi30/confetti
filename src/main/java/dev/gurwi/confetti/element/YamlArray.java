@@ -2,6 +2,7 @@ package dev.gurwi.confetti.element;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -11,6 +12,10 @@ public class YamlArray implements YamlElement, Iterable<YamlElement> {
 
     public YamlArray(List<YamlElement> elements) {
         this.elements = elements;
+    }
+
+    public YamlArray() {
+        this(new ArrayList<>());
     }
 
     @Override

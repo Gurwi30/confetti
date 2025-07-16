@@ -2,6 +2,7 @@ package dev.gurwi.confetti;
 
 import dev.gurwi.confetti.configuration.base.Configuration;
 import dev.gurwi.confetti.element.YamlElement;
+import dev.gurwi.confetti.element.YamlObject;
 import dev.gurwi.confetti.element.YamlPrimitive;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,19 @@ class ConfettiTest {
         assertEquals(20, cfg.get("nested.value-2"));
 
         assertEquals(10, TestConfig.NESTED_VALUE_1);
+    }
+
+    @Test
+    void write() {
+        Confetti confetti = new Confetti();
+        Configuration cfg = confetti.load(TestConfig.class);
+
+        cfg.set("write",
+                new YamlObject()
+                        .set("str", new YamlPrimitive("some-string"))
+                        .set("object", new Something(10))
+        );
+        
     }
 
 }

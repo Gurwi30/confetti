@@ -2,6 +2,8 @@ package dev.gurwi.confetti.element;
 
 public class YamlPrimitive implements YamlElement {
 
+    public static final YamlPrimitive NULL = new YamlPrimitive(null);
+
     private final Object value;
 
     public YamlPrimitive(Object value) {

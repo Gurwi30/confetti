@@ -46,7 +46,7 @@ public final class Confetti {
     }
 
     public <T> YamlSerializer<T> getSerializer(Class<T> type) {
-        return mapperRegistry.getSerializer(type).orElse(new ReflectiveYamlSerializer<>(type));
+        return mapperRegistry.getSerializer(type).orElse(new ReflectiveYamlSerializer<>());
     }
 
     public <T> YamlDeserializer<T> getDeserializer(Class<T> type, Type genericType) {
@@ -132,10 +132,10 @@ public final class Confetti {
                 ? fromResource(resourceConfigAnno.value())
                 : (parentFolder != null ? fromFile(new File(parentFolder, configAnno.value())) : fromFile(configAnno.value()))
                 .withAutoSave(configAnno.autoSave())
-                .withDefaultResource(configAnno.defaultResource());
+                .withDefaultResource(configAnno.defaultResource())
+                .load();
 
         configurations.put(config.getPath(), config);
-
         loadIntoClass(clazz, config);
 
         return config;

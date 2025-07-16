@@ -5,11 +5,12 @@ import dev.gurwi.confetti.configuration.base.Configuration;
 import dev.gurwi.confetti.configuration.base.ConfigurationSection;
 import dev.gurwi.confetti.element.YamlElement;
 import dev.gurwi.confetti.element.YamlObject;
+import dev.gurwi.confetti.serde.YamlSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
-import java.util.Map;
+import java.util.*;
 
 public class Section implements ConfigurationSection {
 
@@ -111,6 +112,19 @@ public class Section implements ConfigurationSection {
 
     @Override
     public ConfigurationSection set(String path, Object value) {
+        if (value == null) {
+            data.remove(path);
+            return this;
+        }
+
+        if (YamlElement.class.isAssignableFrom(value.getClass())) data.put(path, (YamlElement) value);
+        else {
+            @SuppressWarnings("unchecked")
+            YamlSerializer<Object> serializer = (YamlSerializer<Object>) confetti.getSerializer(value.getClass());
+
+            data.put(path, serializer.serialize(value));
+        }
+
         return this;
     }
 

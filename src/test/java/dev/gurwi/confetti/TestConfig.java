@@ -1,12 +1,12 @@
 package dev.gurwi.confetti;
 
+import dev.gurwi.confetti.annotation.Config;
 import dev.gurwi.confetti.annotation.Path;
-import dev.gurwi.confetti.annotation.ResourceConfig;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@ResourceConfig("test.yml")
+@Config(value = "config.yml", defaultResource = "test.yml", autoSave = true)
 public class TestConfig {
 
     @Path("test")

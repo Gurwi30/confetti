@@ -36,8 +36,7 @@ public class FileConfiguration extends Configuration {
 
     @Override
     protected @NotNull Map<String, YamlElement> loadData() {
-        if (!file.exists()) file.mkdirs();
-        if (defaultResource != null) copyDefaultResource(defaultResource, file);
+        createFile();
 
         try (InputStream in = new FileInputStream(file)) {
             return YamlElement.adapt(yaml.load(in));
@@ -73,6 +72,26 @@ public class FileConfiguration extends Configuration {
         runAutoSave();
 
         return ret;
+    }
+
+    private void createFile() {
+        File parent = file.getParentFile();
+
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
+        }
+
+        if (!file.exists()) {
+            if (defaultResource != null) {
+                copyDefaultResource(defaultResource, file);
+            } else {
+                try {
+                    file.createNewFile();
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to create empty config file: " + file, e);
+                }
+            }
+        }
     }
 
     private void copyDefaultResource(String resourceName, File targetFile) {

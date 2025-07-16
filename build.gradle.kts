@@ -7,6 +7,8 @@ version = "0.1.0"
 
 repositories {
     mavenCentral()
+
+    maven("https://oss.sonatype.org/content/groups/public/")
 }
 
 dependencies {
