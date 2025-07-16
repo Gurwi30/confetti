@@ -28,7 +28,7 @@ public final class Confetti {
 
     private final YamlMapperRegistry mapperRegistry = new YamlMapperRegistry();
     private final Map<String, Configuration> configurations = new HashMap<>();
-    private final Map<Class<?>, FileConfiguration> fileConfigurationClasses = new HashMap<>();
+    private final Map<Class<?>, LoadedClassData> fileConfigurationClasses = new HashMap<>();
 
     public <T> Confetti registerSerializer(Class<T> type, YamlSerializer<T> serializer) {
         mapperRegistry.registerSerializer(type, serializer);
@@ -80,6 +80,8 @@ public final class Confetti {
     }
 
     public Confetti loadIntoClass(@NotNull Class<?> clazz, Configuration config) {
+        LoadedClassData loadedClassData = new LoadedClassData(clazz, config);
+
         for (Field field : clazz.getFields()) {
             int fieldModifiers = field.getModifiers();
 
@@ -107,8 +109,8 @@ public final class Confetti {
             if (!isPublic) field.setAccessible(false);
         }
 
-        if (config instanceof FileConfiguration fileConfig) {
-            fileConfigurationClasses.put(config.getClass(), fileConfig);
+        if (config instanceof FileConfiguration) {
+            fileConfigurationClasses.put(config.getClass(), loadedClassData);
         }
 
         return this;
@@ -149,7 +151,10 @@ public final class Confetti {
         getFromType(FileConfiguration.class)
                 .forEach(FileConfiguration::reload);
 
-        fileConfigurationClasses.forEach(this::loadIntoClass);
+        fileConfigurationClasses.forEach((clazz, data) -> {
+            data.restoreInitialValues();
+            loadIntoClass(clazz, data.getConfig());
+        });
     }
 
     public @NotNull Optional<Configuration> get(String path) {
