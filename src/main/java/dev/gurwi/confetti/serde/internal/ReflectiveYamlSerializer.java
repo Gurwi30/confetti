@@ -32,6 +32,10 @@ public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
             return serializeRecord(obj);
         }
 
+        if (obj.getClass().isEnum()) {
+            return new YamlPrimitive(((Enum<?>) obj).name());
+        }
+
         return serializeClass(obj);
     }
 

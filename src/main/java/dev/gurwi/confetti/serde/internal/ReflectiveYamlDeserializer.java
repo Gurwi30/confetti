@@ -34,8 +34,27 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
         }
 
         return switch (node) {
-            case YamlPrimitive primitive -> //noinspection unchecked
-                    (T) primitive.getValue();
+            case YamlPrimitive primitive -> {
+                if (type.isEnum()) {
+                    String name = primitive.getValue().toString().toUpperCase();
+
+                    try {
+                        @SuppressWarnings({"unchecked", "rawtypes"})
+                        Class<Enum> enumClass = (Class<Enum>) type;
+
+                        @SuppressWarnings("unchecked")
+                        T result = (T) Enum.valueOf(enumClass, name);
+
+                        yield result;
+
+                    } catch (IllegalArgumentException e) {
+                        throw new RuntimeException("Invalid enum value '" + name + "' for enum " + type.getSimpleName(), e);
+                    }
+                }
+
+                //noinspection unchecked
+                yield (T) primitive.getValue();
+            }
 
             case YamlArray array -> deserializeArray(array);
 

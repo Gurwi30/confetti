@@ -90,9 +90,9 @@ public final class Confetti {
 
             if (!field.isAnnotationPresent(Path.class)) continue;
 
-            boolean isPublic = Modifier.isPublic(fieldModifiers);
+            boolean isAccessible = Modifier.isPublic(fieldModifiers);
 
-            if (!isPublic) field.setAccessible(true);
+            if (!isAccessible) field.setAccessible(true);
 
             Path pathAnno = field.getAnnotation(Path.class);
             Class<?> type = field.getType();
@@ -106,7 +106,7 @@ public final class Confetti {
                 }
             }
 
-            if (!isPublic) field.setAccessible(false);
+            if (!isAccessible) field.setAccessible(false);
         }
 
         if (config instanceof FileConfiguration) {

@@ -36,6 +36,7 @@ class ConfettiTest {
         assertEquals(20, cfg.get("nested.value-2"));
 
         assertEquals(10, TestConfig.NESTED_VALUE_1);
+        assertEquals(TestEnum.SOME_ENUM, TestConfig.ENUM);
     }
 
     @Test
@@ -47,6 +48,7 @@ class ConfettiTest {
                 new YamlObject()
                         .set("str", new YamlPrimitive("some-string"))
                         .set("object", new Something(10))
+                        .set("enum", TestEnum.SOME_ENUM)
         );
         
     }
