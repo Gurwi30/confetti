@@ -5,6 +5,6 @@ import dev.gurwi.confetti.element.YamlElement;
 @FunctionalInterface
 public interface YamlSerializer<T> {
 
-    YamlElement serialize(T obj);
+    YamlElement serialize(T obj, YamlSerializationContext ctx);
 
 }

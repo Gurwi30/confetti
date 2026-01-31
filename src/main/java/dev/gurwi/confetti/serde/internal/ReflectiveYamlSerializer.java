@@ -4,6 +4,7 @@ import dev.gurwi.confetti.annotation.Path;
 import dev.gurwi.confetti.element.YamlElement;
 import dev.gurwi.confetti.element.YamlObject;
 import dev.gurwi.confetti.element.YamlPrimitive;
+import dev.gurwi.confetti.serde.YamlSerializationContext;
 import dev.gurwi.confetti.serde.YamlSerializer;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,7 +17,7 @@ public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
     public static final ReflectiveYamlSerializer<Object> SERIALIZER = new ReflectiveYamlSerializer<>();
 
     @Override
-    public YamlElement serialize(T obj) {
+    public YamlElement serialize(T obj, YamlSerializationContext ctx) {
         if (obj == null) return YamlPrimitive.NULL;
 
         try {
@@ -92,7 +93,7 @@ public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
 
     private YamlElement serializeValue(Object value) {
         if (value == null) return YamlPrimitive.NULL;
-        return new ReflectiveYamlSerializer<>().serialize(value);
+        return new ReflectiveYamlSerializer<>().serialize(value, null);
     }
 
 }

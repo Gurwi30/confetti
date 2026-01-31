@@ -5,6 +5,8 @@ import dev.gurwi.confetti.configuration.base.Configuration;
 import dev.gurwi.confetti.configuration.base.ConfigurationSection;
 import dev.gurwi.confetti.element.YamlElement;
 import dev.gurwi.confetti.element.YamlObject;
+import dev.gurwi.confetti.serde.YamlDeserializationContext;
+import dev.gurwi.confetti.serde.YamlSerializationContext;
 import dev.gurwi.confetti.serde.YamlSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -107,7 +109,7 @@ public class Section implements ConfigurationSection {
         if (value == null) return null;
 
         return confetti.getDeserializer(type, genericType)
-                .deserialize(value);
+                .deserialize(value, new YamlDeserializationContext(confetti));
     }
 
     @Override
@@ -122,7 +124,7 @@ public class Section implements ConfigurationSection {
             @SuppressWarnings("unchecked")
             YamlSerializer<Object> serializer = (YamlSerializer<Object>) confetti.getSerializer(value.getClass());
 
-            data.put(path, serializer.serialize(value));
+            data.put(path, serializer.serialize(value, new YamlSerializationContext(confetti)));
         }
 
         return this;

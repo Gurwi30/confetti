@@ -5,6 +5,7 @@ import dev.gurwi.confetti.element.YamlArray;
 import dev.gurwi.confetti.element.YamlElement;
 import dev.gurwi.confetti.element.YamlObject;
 import dev.gurwi.confetti.element.YamlPrimitive;
+import dev.gurwi.confetti.serde.YamlDeserializationContext;
 import dev.gurwi.confetti.serde.YamlDeserializer;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,7 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
     }
 
     @Override
-    public T deserialize(@NotNull YamlElement node) {
+    public T deserialize(@NotNull YamlElement node, YamlDeserializationContext ctx) {
         if (YamlElement.class.isAssignableFrom(type)) {
             //noinspection unchecked
             return (T) node;
@@ -79,7 +80,7 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
                 YamlElement elementNode = array.get(i);
 
                 Object value = new ReflectiveYamlDeserializer<>(componentType)
-                        .deserialize(elementNode);
+                        .deserialize(elementNode, null);
 
                 Array.set(arr, i, value);
             }
@@ -122,7 +123,7 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
 
             for (YamlElement elementNode : array) {
                 Object value = new ReflectiveYamlDeserializer<>(elementType)
-                        .deserialize(elementNode);
+                        .deserialize(elementNode, null);
 
                 collection.add(value);
             }
@@ -154,7 +155,7 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
                 if (valueNode == null && comp.getType().isPrimitive()) value = getPrimitiveDefault(comp.getType());
                 else if (valueNode != null) {
                     value = new ReflectiveYamlDeserializer<>(comp.getType(), comp.getGenericType())
-                            .deserialize(valueNode);
+                            .deserialize(valueNode, null);
                 }
 
                 args[i] = value;
@@ -188,7 +189,7 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
                 if (valueNode == null && field.getType().isPrimitive()) value = getPrimitiveDefault(field.getType());
                 else if (valueNode != null) {
                     value = new ReflectiveYamlDeserializer<>(field.getType(), field.getGenericType())
-                            .deserialize(valueNode);
+                            .deserialize(valueNode, null);
                 }
 
                 field.set(instance, value);
@@ -211,6 +212,7 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
         if (type == long.class) return 0L;
         if (type == float.class) return 0.0f;
         if (type == double.class) return 0.0d;
+
         throw new IllegalArgumentException("Unsupported primitive type: " + type);
     }
 

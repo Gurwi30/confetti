@@ -28,7 +28,7 @@ public class YamlObject implements YamlElement {
     }
 
     public YamlObject set(String key, Object value) {
-        data.put(key, ReflectiveYamlSerializer.SERIALIZER.serialize(value));
+        data.put(key, ReflectiveYamlSerializer.SERIALIZER.serialize(value, null));
         return this;
     }
 
