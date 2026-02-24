@@ -1,5 +1,6 @@
 package dev.gurwi.confetti.serde.internal;
 
+import dev.gurwi.confetti.Confetti;
 import dev.gurwi.confetti.annotation.Path;
 import dev.gurwi.confetti.element.YamlElement;
 import dev.gurwi.confetti.element.YamlObject;
@@ -14,7 +15,11 @@ import java.lang.reflect.RecordComponent;
 
 public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
 
-    public static final ReflectiveYamlSerializer<Object> SERIALIZER = new ReflectiveYamlSerializer<>();
+    private final Confetti confetti;
+
+    public ReflectiveYamlSerializer(Confetti confetti) {
+        this.confetti = confetti;
+    }
 
     @Override
     public YamlElement serialize(T obj, YamlSerializationContext ctx) {
@@ -93,7 +98,7 @@ public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
 
     private YamlElement serializeValue(Object value) {
         if (value == null) return YamlPrimitive.NULL;
-        return new ReflectiveYamlSerializer<>().serialize(value, null);
+        return new ReflectiveYamlSerializer<>(confetti).serialize(value, new YamlSerializationContext(confetti));
     }
 
 }

@@ -1,5 +1,6 @@
 package dev.gurwi.confetti.serde.internal;
 
+import dev.gurwi.confetti.Confetti;
 import dev.gurwi.confetti.annotation.Path;
 import dev.gurwi.confetti.element.YamlArray;
 import dev.gurwi.confetti.element.YamlElement;
@@ -15,16 +16,18 @@ import java.util.*;
 
 public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
 
+    private final Confetti confetti;
     private final Class<T> type;
     private final Type genericType;
 
-    public ReflectiveYamlDeserializer(Class<T> type, Type genericType) {
+    public ReflectiveYamlDeserializer(Confetti confetti, Class<T> type, Type genericType) {
+        this.confetti = confetti;
         this.type = type;
         this.genericType = genericType;
     }
 
-    public ReflectiveYamlDeserializer(Class<T> type) {
-        this(type, type);
+    public ReflectiveYamlDeserializer(Confetti confetti, Class<T> type) {
+        this(confetti, type, type);
     }
 
     @Override
@@ -79,8 +82,8 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
             for (int i = 0; i < array.size(); i++) {
                 YamlElement elementNode = array.get(i);
 
-                Object value = new ReflectiveYamlDeserializer<>(componentType)
-                        .deserialize(elementNode, null);
+                Object value = new ReflectiveYamlDeserializer<>(confetti, componentType)
+                        .deserialize(elementNode, new YamlDeserializationContext(confetti));
 
                 Array.set(arr, i, value);
             }
@@ -122,8 +125,8 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
             }
 
             for (YamlElement elementNode : array) {
-                Object value = new ReflectiveYamlDeserializer<>(elementType)
-                        .deserialize(elementNode, null);
+                Object value = new ReflectiveYamlDeserializer<>(confetti, elementType)
+                        .deserialize(elementNode, new YamlDeserializationContext(confetti));
 
                 collection.add(value);
             }
@@ -154,8 +157,8 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
                 Object value = null;
                 if (valueNode == null && comp.getType().isPrimitive()) value = getPrimitiveDefault(comp.getType());
                 else if (valueNode != null) {
-                    value = new ReflectiveYamlDeserializer<>(comp.getType(), comp.getGenericType())
-                            .deserialize(valueNode, null);
+                    value = new ReflectiveYamlDeserializer<>(confetti, comp.getType(), comp.getGenericType())
+                            .deserialize(valueNode, new YamlDeserializationContext(confetti));
                 }
 
                 args[i] = value;
@@ -188,8 +191,8 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
                 Object value = null;
                 if (valueNode == null && field.getType().isPrimitive()) value = getPrimitiveDefault(field.getType());
                 else if (valueNode != null) {
-                    value = new ReflectiveYamlDeserializer<>(field.getType(), field.getGenericType())
-                            .deserialize(valueNode, null);
+                    value = new ReflectiveYamlDeserializer<>(confetti, field.getType(), field.getGenericType())
+                            .deserialize(valueNode, new YamlDeserializationContext(confetti));
                 }
 
                 field.set(instance, value);

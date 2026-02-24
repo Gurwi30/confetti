@@ -27,8 +27,9 @@ public class YamlObject implements YamlElement {
         return this;
     }
 
+    @Deprecated(forRemoval = true)
     public YamlObject set(String key, Object value) {
-        data.put(key, ReflectiveYamlSerializer.SERIALIZER.serialize(value, null));
+        data.put(key, new ReflectiveYamlSerializer<>(null).serialize(value, null));
         return this;
     }
 

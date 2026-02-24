@@ -45,18 +45,18 @@ public final class Confetti {
         return this;
     }
 
-    public <T> YamlSerializer<T> getSerializer(Class<T> type) {
-        return mapperRegistry.getSerializer(type).orElse(new ReflectiveYamlSerializer<>());
+    public <T> @NotNull YamlSerializer<T> getSerializer(Class<T> type) {
+        return mapperRegistry.getSerializer(type).orElse(new ReflectiveYamlSerializer<>(this));
     }
 
-    public <T> YamlDeserializer<T> getDeserializer(Class<T> type, Type genericType) {
+    public <T> @NotNull YamlDeserializer<T> getDeserializer(Class<T> type, Type genericType) {
         return mapperRegistry.getDeserializer(type)
-                .orElse(new ReflectiveYamlDeserializer<>(type, genericType));
+                .orElse(new ReflectiveYamlDeserializer<>(this, type, genericType));
     }
 
-    public <T> YamlDeserializer<T> getDeserializer(Class<T> type) {
+    public <T> @NotNull YamlDeserializer<T> getDeserializer(Class<T> type) {
         return mapperRegistry.getDeserializer(type)
-                .orElse(new ReflectiveYamlDeserializer<>(type));
+                .orElse(new ReflectiveYamlDeserializer<>(this, type));
     }
 
     @Contract("_ -> new")
