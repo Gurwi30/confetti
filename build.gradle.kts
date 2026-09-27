@@ -81,14 +81,8 @@ signing {
     val signingKey = providers.environmentVariable("SIGNING_KEY").orNull
     val signingPassword = providers.environmentVariable("SIGNING_PASSWORD").orNull
 
-    require(!signingKey.isNullOrBlank()) {
-        "SIGNING_KEY is not configured"
+    if (!signingKey.isNullOrBlank() && !signingPassword.isNullOrBlank()) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications["mavenJava"])
     }
-
-    require(!signingPassword.isNullOrBlank()) {
-        "SIGNING_PASSWORD is not configured"
-    }
-
-    useInMemoryPgpKeys(signingKey, signingPassword)
-    sign(publishing.publications["mavenJava"])
 }
