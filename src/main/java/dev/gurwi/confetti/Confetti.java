@@ -157,6 +157,14 @@ public final class Confetti {
         });
     }
 
+    public @NotNull Optional<LoadedClassData> getLoadedClassData(@NotNull Class<?> clazz) {
+        return Optional.ofNullable(fileConfigurationClasses.get(clazz));
+    }
+
+    public @NotNull Optional<LoadedClassData> getLoadedConfiguration(@NotNull Configuration config) {
+        return getLoadedClassData(config.getClass());
+    }
+
     public @NotNull Optional<Configuration> get(String path) {
         return Optional.ofNullable(configurations.get(path));
     }

@@ -1,6 +1,7 @@
 package dev.gurwi.confetti.configuration.base;
 
 import dev.gurwi.confetti.Confetti;
+import dev.gurwi.confetti.LoadedClassData;
 import dev.gurwi.confetti.configuration.Section;
 import dev.gurwi.confetti.element.YamlElement;
 import dev.gurwi.confetti.element.rapresenter.YamlElementRepresenter;
@@ -11,6 +12,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.Optional;
 
 public abstract class Configuration implements ConfigurationSection {
 
@@ -38,6 +40,10 @@ public abstract class Configuration implements ConfigurationSection {
         this.section = new Section(confetti, this, data);
 
         return this;
+    }
+
+    public Optional<LoadedClassData> getLoadedClass() {
+        return confetti.getLoadedConfiguration(this);
     }
 
     @Override

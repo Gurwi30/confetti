@@ -1,7 +1,6 @@
 package dev.gurwi.confetti;
 
 import dev.gurwi.confetti.annotation.Path;
-import dev.gurwi.confetti.configuration.FileConfiguration;
 import dev.gurwi.confetti.configuration.base.Configuration;
 
 import java.lang.reflect.Field;
@@ -19,6 +18,8 @@ public class LoadedClassData {
     public LoadedClassData(Class<?> clazz, Configuration config) {
         this.clazz = clazz;
         this.config = config;
+
+        captureInitialValues();
     }
 
     private void captureInitialValues() {
