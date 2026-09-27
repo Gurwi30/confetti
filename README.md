@@ -7,7 +7,7 @@ A lightweight YAML configuration library for Java, built on top of SnakeYAML.
 [![License](https://img.shields.io/badge/License-MIT-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](LICENSE)
 
 [![Documentation](https://docs.gurwi.dev/api/v1/badge)](https://docs.gurwi.dev/confetti)
-[![Maven Central](https://img.shields.io/badge/Maven%20Central-0.1.3-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](https://central.sonatype.com/artifact/dev.gurwi/confetti)
+[![Maven Central](https://img.shields.io/badge/Maven%20Central-0.1.4-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](https://central.sonatype.com/artifact/dev.gurwi/confetti)
 
 ## Overview
 
@@ -39,7 +39,7 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.gurwi:confetti:0.1.3")
+    implementation("dev.gurwi:confetti:0.1.4")
 }
 ```
 
@@ -49,7 +49,7 @@ dependencies {
 <dependency>
     <groupId>dev.gurwi</groupId>
     <artifactId>confetti</artifactId>
-    <version>0.1.3</version>
+    <version>0.1.4</version>
 </dependency>
 ```
 
