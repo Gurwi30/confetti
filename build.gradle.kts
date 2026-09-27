@@ -25,6 +25,11 @@ tasks.test {
     useJUnitPlatform()
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
@@ -39,6 +44,14 @@ publishing {
                     license {
                         name = "MIT License"
                         url = "https://opensource.org/licenses/MIT"
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = "Gurwi30"
+                        name = "Gurwi30"
+                        url = "https://github.com/Gurwi30"
                     }
                 }
 
@@ -67,6 +80,14 @@ publishing {
 signing {
     val signingKey = providers.environmentVariable("SIGNING_KEY").orNull
     val signingPassword = providers.environmentVariable("SIGNING_PASSWORD").orNull
+
+    require(!signingKey.isNullOrBlank()) {
+        "SIGNING_KEY is not configured"
+    }
+
+    require(!signingPassword.isNullOrBlank()) {
+        "SIGNING_PASSWORD is not configured"
+    }
 
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign(publishing.publications["mavenJava"])
