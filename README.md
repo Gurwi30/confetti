@@ -7,6 +7,7 @@ A lightweight YAML configuration library for Java, built on top of SnakeYAML.
 [![License](https://img.shields.io/badge/License-MIT-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](LICENSE)
 
 [![Documentation](https://docs.gurwi.dev/api/v1/badge)](https://docs.gurwi.dev/confetti)
+[![Maven Central](https://img.shields.io/badge/Maven%20Central-0.1.3-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](https://central.sonatype.com/artifact/dev.gurwi/confetti)
 
 ## Overview
 
@@ -14,23 +15,47 @@ Confetti provides a simple API for loading, reading, modifying, and saving YAML 
 
 It is designed around a few simple ideas:
 
-- Load YAML files directly from disk or from the classpath
-- Access values using dot-separated paths
-- Deserialize YAML values into Java types
-- Map configuration values directly into static fields
-- Create and modify configuration sections
-- Automatically save file configurations after changes
-- Reload configurations at runtime
-- Register custom serializers and deserializers for your own types
-- Define read-only configurations from classpath resources
+* Load YAML files directly from disk or from the classpath
+* Access values using dot-separated paths
+* Deserialize YAML values into Java types
+* Map configuration values directly into static fields
+* Create and modify configuration sections
+* Automatically save file configurations after changes
+* Reload configurations at runtime
+* Register custom serializers and deserializers for your own types
+* Define read-only configurations from classpath resources
 
 Confetti is built on SnakeYAML and provides a higher-level API around YAML configuration management.
 
 ## Installation
 
-Confetti is currently distributed as a Gradle project.
+Confetti is published to Maven Central.
 
-Clone the repository and build it with:
+### Gradle
+
+```kotlin
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("dev.gurwi:confetti:0.1.3")
+}
+```
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>dev.gurwi</groupId>
+    <artifactId>confetti</artifactId>
+    <version>0.1.3</version>
+</dependency>
+```
+
+### Manual Build
+
+If you want to build Confetti from source:
 
 ```bash
 git clone https://github.com/Gurwi30/confetti.git
@@ -43,7 +68,7 @@ For Windows:
 ```powershell
 git clone https://github.com/Gurwi30/confetti.git
 cd confetti
-.\\gradlew.bat build
+.\gradlew.bat build
 ```
 
 ## Quick Start
@@ -321,6 +346,11 @@ You can also register a combined serializer/deserializer:
 ```java
 confetti.registerSerDe(MyType.class, mySerDe);
 ```
+
+## Requirements
+
+* Java 21 or newer
+* SnakeYAML 2.4
 
 ## Project Status
 
