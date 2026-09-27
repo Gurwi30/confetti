@@ -1,14 +1,16 @@
 name: Publish
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main
+      - master
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,23 +28,6 @@ jobs:
 
       - name: Test
         run: ./gradlew test
-
-  publish:
-    needs: test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Set up JDK
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
 
       - name: Publish
         run: ./gradlew publish
