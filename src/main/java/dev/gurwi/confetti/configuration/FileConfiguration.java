@@ -1,7 +1,6 @@
 package dev.gurwi.confetti.configuration;
 
 import dev.gurwi.confetti.Confetti;
-import dev.gurwi.confetti.LoadedClassData;
 import dev.gurwi.confetti.configuration.base.Configuration;
 import dev.gurwi.confetti.configuration.base.ConfigurationSection;
 import dev.gurwi.confetti.element.YamlElement;
@@ -49,16 +48,14 @@ public class FileConfiguration extends Configuration {
     public void reload() {
         this.data = loadData();
         this.section = new Section(confetti, this, data);
+
+        syncAnnotationClasses();
     }
 
     public void save() {
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(path), StandardCharsets.UTF_8)) {
             yaml.dump(data, writer);
-
-            getLoadedClass().ifPresent(data -> {
-                data.restoreInitialValues();
-                confetti.loadIntoClass(getClass(), this);
-            });
+            syncAnnotationClasses();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -114,6 +111,13 @@ public class FileConfiguration extends Configuration {
 
     private void runAutoSave() {
         if (autoSave) save();
+    }
+
+    private void syncAnnotationClasses() {
+        getLoadedClass().ifPresent(data -> {
+            data.restoreInitialValues();
+            confetti.loadIntoClass(getClass(), this);
+        });
     }
 
 }
