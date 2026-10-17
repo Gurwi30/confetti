@@ -33,7 +33,7 @@ public class YamlMapperRegistry {
 
     @SuppressWarnings("unchecked")
     public <T> Optional<YamlDeserializer<T>> getDeserializer(Class<T> type) {
-        return Optional.ofNullable((YamlDeserializer<T>) serializers.get(type));
+        return Optional.ofNullable((YamlDeserializer<T>) deserializers.get(type));
     }
 
 }
