@@ -79,35 +79,21 @@ public final class Confetti {
         return fromFile(new File(parent, path));
     }
 
+    public Confetti loadIntoObject(Object object, Configuration config) {
+        LoadedClassData loadedClassData = new LoadedClassData(object, config);
+        setFieldsFromConfig(object, object.getClass(), config);
+
+        if (config instanceof FileConfiguration) {
+            fileConfigurationClasses.put(config.getClass(), loadedClassData);
+        }
+
+        return this;
+    }
+
     public Confetti loadIntoClass(@NotNull Class<?> clazz, Configuration config) {
         LoadedClassData loadedClassData = new LoadedClassData(clazz, config);
 
-        for (Field field : clazz.getFields()) {
-            int fieldModifiers = field.getModifiers();
-
-            if (Modifier.isFinal(fieldModifiers)) continue;
-            if (!Modifier.isStatic(fieldModifiers)) continue;
-
-            if (!field.isAnnotationPresent(Path.class)) continue;
-
-            boolean isAccessible = Modifier.isPublic(fieldModifiers);
-
-            if (!isAccessible) field.setAccessible(true);
-
-            Path pathAnno = field.getAnnotation(Path.class);
-            Class<?> type = field.getType();
-            Object value = config.get(pathAnno.value(), type, field.getGenericType());
-
-            if (value != null) {
-                try {
-                    field.set(null, value);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            if (!isAccessible) field.setAccessible(false);
-        }
+        setFieldsFromConfig(null, clazz, config);
 
         if (config instanceof FileConfiguration) {
             fileConfigurationClasses.put(config.getClass(), loadedClassData);
@@ -161,7 +147,7 @@ public final class Confetti {
         return Optional.ofNullable(fileConfigurationClasses.get(clazz));
     }
 
-    public @NotNull Optional<LoadedClassData> getLoadedConfiguration(@NotNull Configuration config) {
+    public @NotNull Optional<LoadedClassData> getClassLoadedConfiguration(@NotNull Configuration config) {
         return getLoadedClassData(config.getClass());
     }
 
@@ -182,6 +168,35 @@ public final class Confetti {
 
     public YamlMapperRegistry getMapperRegistry() {
         return mapperRegistry;
+    }
+
+    private void setFieldsFromConfig(@Nullable Object object, @NotNull Class<?> clazz, Configuration config) {
+        for (Field field : clazz.getFields()) {
+            int fieldModifiers = field.getModifiers();
+
+            if (Modifier.isFinal(fieldModifiers)) continue;
+            if (!Modifier.isStatic(fieldModifiers)) continue;
+
+            if (!field.isAnnotationPresent(Path.class)) continue;
+
+            boolean isAccessible = Modifier.isPublic(fieldModifiers);
+
+            if (!isAccessible) field.setAccessible(true);
+
+            Path pathAnno = field.getAnnotation(Path.class);
+            Class<?> type = field.getType();
+            Object value = config.get(pathAnno.value(), type, field.getGenericType());
+
+            if (value != null) {
+                try {
+                    field.set(object, value);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if (!isAccessible) field.setAccessible(false);
+        }
     }
 
 }

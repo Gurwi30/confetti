@@ -2,6 +2,7 @@ package dev.gurwi.confetti;
 
 import dev.gurwi.confetti.annotation.Path;
 import dev.gurwi.confetti.configuration.base.Configuration;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -12,10 +13,20 @@ public class LoadedClassData {
 
     private final Map<Field, Object> originalValues = new HashMap<>();
 
+    private final Object instance;
     private final Class<?> clazz;
     private final Configuration config;
 
+    public LoadedClassData(@NotNull Object instance, Configuration config) {
+        this.instance = instance;
+        this.clazz = instance.getClass();
+        this.config = config;
+
+        captureInitialValues();
+    }
+
     public LoadedClassData(Class<?> clazz, Configuration config) {
+        this.instance = null;
         this.clazz = clazz;
         this.config = config;
 
@@ -27,11 +38,11 @@ public class LoadedClassData {
             if (!Modifier.isStatic(field.getModifiers())) continue;
             if (!field.isAnnotationPresent(Path.class)) continue;
 
-            boolean wasAccessible = field.canAccess(null);
+            boolean wasAccessible = field.canAccess(instance);
             if (!wasAccessible) field.setAccessible(true);
 
             try {
-                Object value = field.get(null);
+                Object value = field.get(instance);
                 originalValues.put(field, value);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException("Failed to capture field value", e);
@@ -46,11 +57,11 @@ public class LoadedClassData {
             Field field = entry.getKey();
             Object originalValue = entry.getValue();
 
-            boolean wasAccessible = field.canAccess(null);
+            boolean wasAccessible = field.canAccess(instance);
             if (!wasAccessible) field.setAccessible(true);
 
             try {
-                field.set(null, originalValue);
+                field.set(instance, originalValue);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException("Failed to restore field value", e);
             }

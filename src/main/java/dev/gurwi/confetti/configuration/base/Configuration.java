@@ -43,7 +43,7 @@ public abstract class Configuration implements ConfigurationSection {
     }
 
     public Optional<LoadedClassData> getLoadedClass() {
-        return confetti.getLoadedConfiguration(this);
+        return confetti.getClassLoadedConfiguration(this);
     }
 
     @Override
