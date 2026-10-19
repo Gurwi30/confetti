@@ -21,6 +21,7 @@ It is designed around a few simple ideas:
 * Map configuration values directly into static fields
 * Create and modify configuration sections
 * Automatically save file configurations after changes
+* Keep comments and blank lines in YAML files when saving
 * Reload configurations at runtime
 * Register custom serializers and deserializers for your own types
 * Define read-only configurations from classpath resources
@@ -114,8 +115,8 @@ import dev.gurwi.confetti.annotation.Config;
 import dev.gurwi.confetti.annotation.Path;
 
 @Config(
-    value = "config.yml",
-    autoSave = true
+        value = "config.yml",
+        autoSave = true
 )
 public class AppConfig {
 
@@ -288,6 +289,40 @@ With `autoSave` enabled, changes are saved automatically.
 
 Resource configurations are read-only.
 
+## Comments
+
+Comments and blank lines in file configurations are preserved when saving.
+
+Given:
+
+```yaml
+# Server settings
+server:
+  host: localhost # bind address
+  port: 8080
+
+# Debug mode
+debug: false
+```
+
+After changing a value and saving:
+
+```java
+config.set("debug", true);
+((FileConfiguration) config).save();
+```
+
+every comment and blank line is still in the file.
+
+Comments are matched to values by key path, so:
+
+* Comments stay attached to a key as long as the key exists
+* Comments belonging to a removed key are removed with it
+* New keys are written without comments
+* Comments on list items are kept only if the list length is unchanged
+
+Reloading a configuration reads the comments from the file again.
+
 ## Reloading
 
 File configurations can be reloaded:
@@ -314,8 +349,8 @@ A file configuration can use a classpath resource as its default configuration.
 
 ```java
 @Config(
-    value = "config.yml",
-    defaultResource = "config.yml"
+        value = "config.yml",
+        defaultResource = "config.yml"
 )
 public class AppConfig {
 }
@@ -329,16 +364,16 @@ Confetti supports custom serializers and deserializers for types that require sp
 
 ```java
 confetti.registerSerializer(MyType.class, value -> {
-    return ...;
-});
+        return ...;
+        });
 ```
 
 Custom deserializers can be registered in the same way:
 
 ```java
 confetti.registerDeserializer(MyType.class, (element, type) -> {
-    return ...;
-});
+        return ...;
+        });
 ```
 
 You can also register a combined serializer/deserializer:
