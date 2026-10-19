@@ -8,7 +8,9 @@ import dev.gurwi.confetti.element.rapresenter.YamlElementRepresenter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -19,6 +21,8 @@ public abstract class Configuration implements ConfigurationSection {
     protected final Confetti confetti;
     protected final String path;
     protected final Yaml yaml;
+    protected final DumperOptions dumperOptions;
+    protected final YamlElementRepresenter representer;
 
     protected Map<String, YamlElement> data;
     protected Section section;
@@ -27,10 +31,15 @@ public abstract class Configuration implements ConfigurationSection {
         this.confetti = confetti;
         this.path = path;
 
-        DumperOptions options = new DumperOptions();
-        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        LoaderOptions loaderOptions = new LoaderOptions();
+        loaderOptions.setProcessComments(true);
 
-        this.yaml = new Yaml(new YamlElementRepresenter(options), options);
+        this.dumperOptions = new DumperOptions();
+        this.dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        this.dumperOptions.setProcessComments(true);
+
+        this.representer = new YamlElementRepresenter(dumperOptions);
+        this.yaml = new Yaml(new Constructor(loaderOptions), representer, dumperOptions, loaderOptions);
     }
 
     protected abstract @NotNull Map<String, YamlElement> loadData();

@@ -5,10 +5,21 @@ import dev.gurwi.confetti.configuration.base.Configuration;
 import dev.gurwi.confetti.configuration.base.ConfigurationSection;
 import dev.gurwi.confetti.element.YamlElement;
 import org.jetbrains.annotations.NotNull;
+import org.yaml.snakeyaml.emitter.Emitter;
+import org.yaml.snakeyaml.nodes.MappingNode;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.NodeTuple;
+import org.yaml.snakeyaml.nodes.ScalarNode;
+import org.yaml.snakeyaml.nodes.SequenceNode;
+import org.yaml.snakeyaml.resolver.Resolver;
+import org.yaml.snakeyaml.serializer.Serializer;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FileConfiguration extends Configuration {
@@ -17,6 +28,7 @@ public class FileConfiguration extends Configuration {
 
     private String defaultResource = null;
     private boolean autoSave = false;
+    private Node commentSource = null;
 
     public FileConfiguration(Confetti confetti, @NotNull File file) {
         super(confetti, file.getPath());
@@ -38,11 +50,19 @@ public class FileConfiguration extends Configuration {
     protected @NotNull Map<String, YamlElement> loadData() {
         createFile();
 
-        try (InputStream in = new FileInputStream(file)) {
-            return YamlElement.adapt(yaml.load(in));
+        String content;
+
+        try {
+            content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        this.commentSource = yaml.compose(new StringReader(content));
+
+        Map<String, Object> raw = yaml.load(content);
+
+        return raw == null ? new LinkedHashMap<>() : YamlElement.adapt(raw);
     }
 
     public void reload() {
@@ -53,8 +73,20 @@ public class FileConfiguration extends Configuration {
     }
 
     public void save() {
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(path), StandardCharsets.UTF_8)) {
-            yaml.dump(data, writer);
+        Node root = representer.represent(data);
+
+        if (commentSource != null) {
+            copyComments(commentSource, root);
+        }
+
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
+            Emitter emitter = new Emitter(writer, dumperOptions);
+            Serializer serializer = new Serializer(emitter, new Resolver(), dumperOptions, null);
+
+            serializer.open();
+            serializer.serialize(root);
+            serializer.close();
+
             syncAnnotationClasses();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -75,6 +107,42 @@ public class FileConfiguration extends Configuration {
         runAutoSave();
 
         return ret;
+    }
+
+    private void copyComments(@NotNull Node source, @NotNull Node target) {
+        target.setBlockComments(source.getBlockComments());
+        target.setInLineComments(source.getInLineComments());
+        target.setEndComments(source.getEndComments());
+
+        if (source instanceof MappingNode sourceMap && target instanceof MappingNode targetMap) {
+            Map<String, NodeTuple> sourceTuples = new HashMap<>();
+
+            for (NodeTuple tuple : sourceMap.getValue()) {
+                if (tuple.getKeyNode() instanceof ScalarNode key) {
+                    sourceTuples.put(key.getValue(), tuple);
+                }
+            }
+
+            for (NodeTuple tuple : targetMap.getValue()) {
+                if (!(tuple.getKeyNode() instanceof ScalarNode key)) continue;
+
+                NodeTuple match = sourceTuples.get(key.getValue());
+
+                if (match == null) continue;
+
+                copyComments(match.getKeyNode(), tuple.getKeyNode());
+                copyComments(match.getValueNode(), tuple.getValueNode());
+            }
+        } else if (source instanceof SequenceNode sourceSeq && target instanceof SequenceNode targetSeq) {
+            List<Node> sourceItems = sourceSeq.getValue();
+            List<Node> targetItems = targetSeq.getValue();
+
+            if (sourceItems.size() != targetItems.size()) return;
+
+            for (int i = 0; i < sourceItems.size(); i++) {
+                copyComments(sourceItems.get(i), targetItems.get(i));
+            }
+        }
     }
 
     private void createFile() {

@@ -11,4 +11,4 @@ nested:
   value-1: 10
   value-2: 20
 
-enum: SOME_ENUM
+enum: SOME_ENUM # test comment
