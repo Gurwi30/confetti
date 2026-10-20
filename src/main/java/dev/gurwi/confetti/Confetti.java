@@ -156,14 +156,16 @@ public final class Confetti {
     }
 
     public @NotNull @Unmodifiable Set<Configuration> getAll() {
-        return Set.copyOf(configurations.values());
+        return Collections.unmodifiableSet(new HashSet<>(configurations.values()));
     }
 
     public <T extends Configuration> @NotNull @Unmodifiable Set<T> getFromType(@NotNull Class<T> type) {
-        return configurations.values().stream()
+        Set<T> result = configurations.values().stream()
                 .filter(configuration -> type.isAssignableFrom(configuration.getClass()))
                 .map(type::cast)
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.toCollection(HashSet::new));
+
+        return Collections.unmodifiableSet(result);
     }
 
     public YamlMapperRegistry getMapperRegistry() {

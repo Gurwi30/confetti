@@ -1,5 +1,6 @@
 package dev.gurwi.confetti.element;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,66 +26,71 @@ public interface YamlElement {
     static @NotNull YamlElement adapt(@Nullable Object obj) {
         if (obj == null) return YamlPrimitive.NULL;
 
-        return switch (obj) {
-            case Collection<?> collection -> new YamlArray(
+        if (obj instanceof Collection<?>) {
+            Collection<?> collection = (Collection<?>) obj;
+            return new YamlArray(
                     collection.stream()
                             .map(YamlElement::adapt)
                             .collect(Collectors.toList())
-
             );
+        }
 
-            case Map<?, ?> map -> {
-                Map<String, YamlElement> elements = new LinkedHashMap<>();
+        if (obj instanceof Map<?, ?>) {
+            Map<?, ?> map = (Map<?, ?>) obj;
+            Map<String, YamlElement> elements = new LinkedHashMap<>();
 
-                for (Map.Entry<?, ?> entry : map.entrySet()) {
-                    String path = (String) entry.getKey();
-                    elements.put(path, adapt(entry.getValue()));
-                }
-
-                yield new YamlObject(elements);
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                String path = (String) entry.getKey();
+                elements.put(path, adapt(entry.getValue()));
             }
 
-            default -> {
-                if (obj.getClass().isArray()) {
-                    YamlArray array = new YamlArray();
-                    int length = Array.getLength(obj);
+            return new YamlObject(elements);
+        }
 
-                    for (int i = 0; i < length; i++) {
-                        Object element = Array.get(obj, i);
-                        array.add(adapt(element));
-                    }
+        if (obj.getClass().isArray()) {
+            YamlArray array = new YamlArray();
+            int length = Array.getLength(obj);
 
-                    yield array;
-                }
-
-                if (isPrimitiveOrWrapper(obj.getClass()) || obj instanceof String) {
-                    yield new YamlPrimitive(obj);
-                }
-
-                throw new IllegalArgumentException("Cannot adapt " + obj.getClass().getName() + " to " + YamlElement.class);
+            for (int i = 0; i < length; i++) {
+                Object element = Array.get(obj, i);
+                array.add(adapt(element));
             }
-        };
+
+            return array;
+        }
+
+        if (isPrimitiveOrWrapper(obj.getClass()) || obj instanceof String) {
+            return new YamlPrimitive(obj);
+        }
+
+        throw new IllegalArgumentException("Cannot adapt " + obj.getClass().getName() + " to " + YamlElement.class);
     }
 
-    private Object unwrap(@NotNull YamlElement element) {
-        return switch (element) {
-            case YamlPrimitive primitive -> primitive.getValue();
+    @ApiStatus.Internal
+    default Object unwrap(@NotNull YamlElement element) {
+        if (element instanceof YamlPrimitive) {
+            return ((YamlPrimitive) element).getValue();
+        }
 
-            case YamlArray array -> array.getElements().stream()
+        if (element instanceof YamlArray) {
+            YamlArray array = (YamlArray) element;
+            return array.getElements().stream()
                     .map(this::unwrap)
                     .collect(Collectors.toList());
+        }
 
-            case YamlObject object -> {
-                Map<String, Object> map = new LinkedHashMap<>();
-                for (Map.Entry<String, YamlElement> entry : object.getData().entrySet()) {
-                    map.put(entry.getKey(), unwrap(entry.getValue()));
-                }
+        if (element instanceof YamlObject) {
+            YamlObject object = (YamlObject) element;
+            Map<String, Object> map = new LinkedHashMap<>();
 
-                yield map;
+            for (Map.Entry<String, YamlElement> entry : object.getData().entrySet()) {
+                map.put(entry.getKey(), unwrap(entry.getValue()));
             }
 
-            default -> throw new IllegalStateException("Unexpected value: " + element);
-        };
+            return map;
+        }
+
+        throw new IllegalStateException("Unexpected value: " + element);
     }
 
     boolean isEmpty();
@@ -117,7 +123,8 @@ public interface YamlElement {
     }
 
     @Contract(pure = true)
-    private static boolean isPrimitiveOrWrapper(@NotNull Class<?> clazz) {
+    @ApiStatus.Internal
+    static boolean isPrimitiveOrWrapper(@NotNull Class<?> clazz) {
         return clazz.isPrimitive()
                 || clazz == Boolean.class
                 || clazz == Integer.class

@@ -7,11 +7,11 @@ import dev.gurwi.confetti.element.YamlObject;
 import dev.gurwi.confetti.element.YamlPrimitive;
 import dev.gurwi.confetti.serde.YamlSerializationContext;
 import dev.gurwi.confetti.serde.YamlSerializer;
+import dev.gurwi.confetti.serde.internal.record.RecordComponentInfo;
+import dev.gurwi.confetti.serde.internal.record.RecordSupport;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.RecordComponent;
 
 public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
 
@@ -30,11 +30,10 @@ public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
         } catch (IllegalArgumentException e) {
             return serializeObject(obj);
         }
-
     }
 
     private YamlElement serializeObject(@NotNull T obj) {
-        if (obj.getClass().isRecord()) {
+        if (RecordSupport.isRecord(obj.getClass())) {
             return serializeRecord(obj);
         }
 
@@ -50,20 +49,19 @@ public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
         Class<?> type = obj.getClass();
 
         try {
-            for (RecordComponent component : type.getRecordComponents()) {
-                Method accessor = component.getAccessor();
-                Object value = accessor.invoke(obj);
+            for (RecordComponentInfo component : RecordSupport.components(type)) {
+                Object value = component.getAccessor().invoke(obj);
 
                 String key = component.getName();
                 Field field = type.getDeclaredField(component.getName());
+                Path pathAnnotation = field.getAnnotation(Path.class);
 
-                if (field.isAnnotationPresent(Path.class)) {
-                    key = field.getAnnotation(Path.class).value();
+                if (pathAnnotation != null) {
+                    key = pathAnnotation.value();
                 }
 
                 yamlObject.set(key, serializeValue(value));
             }
-
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize record: " + type.getName(), e);
         }
@@ -76,21 +74,19 @@ public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
         Class<?> type = obj.getClass();
 
         for (Field field : type.getDeclaredFields()) {
-            if (!field.isAnnotationPresent(Path.class)) continue;
+            Path pathAnnotation = field.getAnnotation(Path.class);
+            if (pathAnnotation == null) continue;
 
-            String key = field.getAnnotation(Path.class).value();
-
-            boolean wasAccessible = field.canAccess(obj);
+            boolean wasAccessible = field.isAccessible();
             if (!wasAccessible) field.setAccessible(true);
 
             try {
-                Object value = field.get(obj);
-                yamlObject.set(key, serializeValue(value));
+                yamlObject.set(pathAnnotation.value(), serializeValue(field.get(obj)));
             } catch (IllegalAccessException e) {
                 throw new RuntimeException("Failed to serialize field: " + field.getName(), e);
+            } finally {
+                if (!wasAccessible) field.setAccessible(false);
             }
-
-            if (!wasAccessible) field.setAccessible(false);
         }
 
         return yamlObject;
@@ -98,6 +94,7 @@ public class ReflectiveYamlSerializer<T> implements YamlSerializer<T> {
 
     private YamlElement serializeValue(Object value) {
         if (value == null) return YamlPrimitive.NULL;
+
         return new ReflectiveYamlSerializer<>(confetti).serialize(value, new YamlSerializationContext(confetti));
     }
 

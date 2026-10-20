@@ -8,11 +8,20 @@ import dev.gurwi.confetti.element.YamlObject;
 import dev.gurwi.confetti.element.YamlPrimitive;
 import dev.gurwi.confetti.serde.YamlDeserializationContext;
 import dev.gurwi.confetti.serde.YamlDeserializer;
-import org.jetbrains.annotations.Contract;
+import dev.gurwi.confetti.serde.internal.factory.CollectionFactory;
+import dev.gurwi.confetti.serde.internal.factory.PrimitiveTypeDefault;
+import dev.gurwi.confetti.serde.internal.record.RecordComponentInfo;
+import dev.gurwi.confetti.serde.internal.record.RecordSupport;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.List;
 
 public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
 
@@ -31,107 +40,69 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T deserialize(@NotNull YamlElement node, YamlDeserializationContext ctx) {
         if (YamlElement.class.isAssignableFrom(type)) {
-            //noinspection unchecked
             return (T) node;
         }
 
-        return switch (node) {
-            case YamlPrimitive primitive -> {
-                if (type.isEnum()) {
-                    String name = primitive.getValue().toString().toUpperCase();
+        if (node instanceof YamlPrimitive) {
+            return deserializePrimitive((YamlPrimitive) node);
+        }
 
-                    try {
-                        @SuppressWarnings({"unchecked", "rawtypes"})
-                        Class<Enum> enumClass = (Class<Enum>) type;
+        if (node instanceof YamlArray) {
+            return deserializeArray((YamlArray) node);
+        }
 
-                        @SuppressWarnings("unchecked")
-                        T result = (T) Enum.valueOf(enumClass, name);
+        if (node instanceof YamlObject) {
+            YamlObject object = (YamlObject) node;
 
-                        yield result;
-
-                    } catch (IllegalArgumentException e) {
-                        throw new RuntimeException("Invalid enum value '" + name + "' for enum " + type.getSimpleName(), e);
-                    }
-                }
-
-                //noinspection unchecked
-                yield (T) primitive.getValue();
+            if (RecordSupport.isRecord(type)) {
+                return deserializeRecord(object);
             }
 
-            case YamlArray array -> deserializeArray(array);
+            return deserializeClass(object);
+        }
 
-            case YamlObject object -> {
-                if (type.isRecord()) {
-                    yield deserializeRecord(object);
-                }
-
-                yield deserializeClass(object);
-            }
-
-            default -> throw new IllegalStateException("Unexpected value: " + node);
-        };
+        throw new IllegalStateException("Unexpected value: " + node);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private T deserializePrimitive(YamlPrimitive primitive) {
+        if (type.isEnum()) {
+            String name = primitive.getValue().toString().toUpperCase();
+
+            try {
+                return (T) Enum.valueOf((Class<Enum>) type, name);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid enum value '" + name + "' for enum " + type.getSimpleName(), e);
+            }
+        }
+
+        return (T) primitive.getValue();
+    }
+
+    @SuppressWarnings("unchecked")
     private T deserializeArray(@NotNull YamlArray array) {
         if (type.isArray()) {
             Class<?> componentType = type.getComponentType();
-            Object arr = Array.newInstance(componentType, array.size());
+            Object result = Array.newInstance(componentType, array.size());
 
             for (int i = 0; i < array.size(); i++) {
-                YamlElement elementNode = array.get(i);
-
-                Object value = new ReflectiveYamlDeserializer<>(confetti, componentType)
-                        .deserialize(elementNode, new YamlDeserializationContext(confetti));
-
-                Array.set(arr, i, value);
+                Array.set(result, i, deserializeValue(componentType, componentType, array.get(i)));
             }
 
-            //noinspection unchecked
-            return (T) arr;
+            return (T) result;
         }
 
         if (Collection.class.isAssignableFrom(type)) {
-            Collection<Object> collection;
-
-            if (type.isInterface()) {
-                if (type == List.class) collection = new ArrayList<>();
-                else if (type == Set.class) collection = new HashSet<>();
-                else if (type == NavigableSet.class) collection = new TreeSet<>();
-                else if (type == SortedSet.class) collection = new TreeSet<>();
-                else if (type == Queue.class) collection = new LinkedList<>();
-                else {
-                    throw new IllegalArgumentException("Unsupported array/collection type: " + type.getName());
-                }
-            } else {
-                try {
-                    //noinspection unchecked
-                    collection = (Collection<Object>) type.getDeclaredConstructor().newInstance();
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException e) {
-
-                    collection = new ArrayList<>();
-                }
-            }
-
-            Class<?> elementType = Object.class;
-
-            if (genericType instanceof ParameterizedType parameterizedType) {
-                Type arg = parameterizedType.getActualTypeArguments()[0];
-                if (arg instanceof Class<?> clazz) {
-                    elementType = clazz;
-                }
-            }
+            Collection<Object> collection = CollectionFactory.create(type);
+            Class<?> elementType = resolveElementType();
 
             for (YamlElement elementNode : array) {
-                Object value = new ReflectiveYamlDeserializer<>(confetti, elementType)
-                        .deserialize(elementNode, new YamlDeserializationContext(confetti));
-
-                collection.add(value);
+                collection.add(deserializeValue(elementType, elementType, elementNode));
             }
 
-            //noinspection ReassignedVariable,unchecked
             return (T) collection;
         }
 
@@ -140,34 +111,24 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
 
     private @NotNull T deserializeRecord(YamlObject node) {
         try {
-            RecordComponent[] components = type.getRecordComponents();
-            Object[] args = new Object[components.length];
-            Class<?>[] paramTypes = new Class<?>[components.length];
+            List<RecordComponentInfo> components = RecordSupport.components(type);
+            Object[] args = new Object[components.size()];
+            Class<?>[] paramTypes = new Class<?>[components.size()];
 
-            for (int i = 0; i < components.length; i++) {
-                RecordComponent comp = components[i];
-                paramTypes[i] = comp.getType();
+            for (int i = 0; i < components.size(); i++) {
+                RecordComponentInfo component = components.get(i);
+                paramTypes[i] = component.getType();
 
-                Field backingField = type.getDeclaredField(comp.getName());
-                Path pathAnno = backingField.getAnnotation(Path.class);
-                String yamlKey = pathAnno != null ? pathAnno.value() : comp.getName();
+                Field backingField = type.getDeclaredField(component.getName());
+                Path pathAnnotation = backingField.getAnnotation(Path.class);
+                String yamlKey = pathAnnotation != null ? pathAnnotation.value() : component.getName();
 
-                YamlElement valueNode = node.get(yamlKey);
-
-                Object value = null;
-                if (valueNode == null && comp.getType().isPrimitive()) value = getPrimitiveDefault(comp.getType());
-                else if (valueNode != null) {
-                    value = new ReflectiveYamlDeserializer<>(confetti, comp.getType(), comp.getGenericType())
-                            .deserialize(valueNode, new YamlDeserializationContext(confetti));
-                }
-
-                args[i] = value;
+                args[i] = deserializeValue(component.getType(), component.getGenericType(), node.get(yamlKey));
             }
 
-            Constructor<T> ctor = type.getDeclaredConstructor(paramTypes);
-            ctor.setAccessible(true);
-            return ctor.newInstance(args);
-
+            Constructor<T> constructor = type.getDeclaredConstructor(paramTypes);
+            constructor.setAccessible(true);
+            return constructor.newInstance(args);
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize record " + node.getClass().getName() + " into " + type.getName(), e);
         }
@@ -178,22 +139,13 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
             T instance = type.getDeclaredConstructor().newInstance();
 
             for (Field field : type.getDeclaredFields()) {
-                if (!field.isAnnotationPresent(Path.class)) continue;
+                Path pathAnnotation = field.getAnnotation(Path.class);
+                if (pathAnnotation == null) continue;
 
-                Path pathAnno = field.getAnnotation(Path.class);
-                String yamlKey = pathAnno.value();
+                Object value = deserializeValue(field.getType(), field.getGenericType(), node.get(pathAnnotation.value()));
 
-                YamlElement valueNode = node.get(yamlKey);
-
-                boolean wasAccessible = field.canAccess(instance);
+                boolean wasAccessible = field.isAccessible();
                 if (!wasAccessible) field.setAccessible(true);
-
-                Object value = null;
-                if (valueNode == null && field.getType().isPrimitive()) value = getPrimitiveDefault(field.getType());
-                else if (valueNode != null) {
-                    value = new ReflectiveYamlDeserializer<>(confetti, field.getType(), field.getGenericType())
-                            .deserialize(valueNode, new YamlDeserializationContext(confetti));
-                }
 
                 field.set(instance, value);
 
@@ -201,22 +153,30 @@ public class ReflectiveYamlDeserializer<T> implements YamlDeserializer<T> {
             }
 
             return instance;
-
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize class " + node.getClass().getName() + " into " + type.getName(), e);
         }
     }
 
-    @Contract(pure = true)
-    private static @NotNull Object getPrimitiveDefault(Class<?> type) {
-        if (type == boolean.class) return false;
-        if (type == char.class) return '\0';
-        if (type == byte.class || type == short.class || type == int.class) return 0;
-        if (type == long.class) return 0L;
-        if (type == float.class) return 0.0f;
-        if (type == double.class) return 0.0d;
+    private @Nullable Object deserializeValue(Class<?> valueType, Type valueGenericType, YamlElement valueNode) {
+        if (valueNode == null) {
+            return valueType.isPrimitive() ? PrimitiveTypeDefault.of(valueType) : null;
+        }
 
-        throw new IllegalArgumentException("Unsupported primitive type: " + type);
+        return new ReflectiveYamlDeserializer<>(confetti, valueType, valueGenericType)
+                .deserialize(valueNode, new YamlDeserializationContext(confetti));
+    }
+
+    private Class<?> resolveElementType() {
+        if (genericType instanceof ParameterizedType) {
+            Type argument = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+
+            if (argument instanceof Class<?>) {
+                return (Class<?>) argument;
+            }
+        }
+
+        return Object.class;
     }
 
 }

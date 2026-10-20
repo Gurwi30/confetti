@@ -38,7 +38,7 @@ public class LoadedClassData {
             if (!Modifier.isStatic(field.getModifiers())) continue;
             if (!field.isAnnotationPresent(Path.class)) continue;
 
-            boolean wasAccessible = field.canAccess(instance);
+            boolean wasAccessible = field.isAccessible();
             if (!wasAccessible) field.setAccessible(true);
 
             try {
@@ -57,7 +57,7 @@ public class LoadedClassData {
             Field field = entry.getKey();
             Object originalValue = entry.getValue();
 
-            boolean wasAccessible = field.canAccess(instance);
+            boolean wasAccessible = field.isAccessible();
             if (!wasAccessible) field.setAccessible(true);
 
             try {

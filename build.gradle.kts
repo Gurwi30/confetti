@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.gurwi"
-version = "0.1.8"
+version = "0.1.9"
 
 repositories {
     mavenCentral()
@@ -19,21 +19,33 @@ dependencies {
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(8))
     }
+
+    withSourcesJar()
+    withJavadocJar()
+}
+
+val testToolchain = javaToolchains.launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(21))
+}
+
+val testCompiler = javaToolchains.compilerFor {
+    languageVersion.set(JavaLanguageVersion.of(21))
+}
+
+tasks.compileTestJava {
+    javaCompiler.set(testCompiler)
 }
 
 tasks.test {
     useJUnitPlatform()
-}
-
-java {
-    withSourcesJar()
-    withJavadocJar()
+    javaLauncher.set(testToolchain)
 }
 
 publishing {

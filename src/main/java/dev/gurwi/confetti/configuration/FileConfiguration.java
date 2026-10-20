@@ -53,7 +53,7 @@ public class FileConfiguration extends Configuration {
         String content;
 
         try {
-            content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+            content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -79,7 +79,7 @@ public class FileConfiguration extends Configuration {
             copyComments(commentSource, root);
         }
 
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
+        try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8)) {
             Emitter emitter = new Emitter(writer, dumperOptions);
             Serializer serializer = new Serializer(emitter, new Resolver(), dumperOptions, null);
 
@@ -114,18 +114,23 @@ public class FileConfiguration extends Configuration {
         target.setInLineComments(source.getInLineComments());
         target.setEndComments(source.getEndComments());
 
-        if (source instanceof MappingNode sourceMap && target instanceof MappingNode targetMap) {
+        if (source instanceof MappingNode && target instanceof MappingNode) {
+            MappingNode sourceMap = (MappingNode) source;
+            MappingNode targetMap = (MappingNode) target;
+
             Map<String, NodeTuple> sourceTuples = new HashMap<>();
 
             for (NodeTuple tuple : sourceMap.getValue()) {
-                if (tuple.getKeyNode() instanceof ScalarNode key) {
+                if (tuple.getKeyNode() instanceof ScalarNode) {
+                    ScalarNode key = (ScalarNode) tuple.getKeyNode();
                     sourceTuples.put(key.getValue(), tuple);
                 }
             }
 
             for (NodeTuple tuple : targetMap.getValue()) {
-                if (!(tuple.getKeyNode() instanceof ScalarNode key)) continue;
+                if (!(tuple.getKeyNode() instanceof ScalarNode)) continue;
 
+                ScalarNode key = (ScalarNode) tuple.getKeyNode();
                 NodeTuple match = sourceTuples.get(key.getValue());
 
                 if (match == null) continue;
@@ -133,7 +138,14 @@ public class FileConfiguration extends Configuration {
                 copyComments(match.getKeyNode(), tuple.getKeyNode());
                 copyComments(match.getValueNode(), tuple.getValueNode());
             }
-        } else if (source instanceof SequenceNode sourceSeq && target instanceof SequenceNode targetSeq) {
+
+            return;
+        }
+
+        if (source instanceof SequenceNode && target instanceof SequenceNode) {
+            SequenceNode sourceSeq = (SequenceNode) source;
+            SequenceNode targetSeq = (SequenceNode) target;
+
             List<Node> sourceItems = sourceSeq.getValue();
             List<Node> targetItems = targetSeq.getValue();
 
@@ -145,6 +157,7 @@ public class FileConfiguration extends Configuration {
         }
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void createFile() {
         File parent = file.getParentFile();
 

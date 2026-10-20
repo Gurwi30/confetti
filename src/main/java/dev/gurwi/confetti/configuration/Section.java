@@ -52,7 +52,7 @@ public class Section implements ConfigurationSection {
         if (element == null) return null;
 
         Object value = element.asPrimitive().getUnchecked();
-        return value instanceof Number number ? number.intValue() : null;
+        return value instanceof Number ? ((Number) value).intValue() : null;
     }
 
     @Override
@@ -61,7 +61,7 @@ public class Section implements ConfigurationSection {
         if (element == null) return null;
 
         Object value = element.asPrimitive().getUnchecked();
-        return value instanceof Number number ? number.longValue() : null;
+        return value instanceof Number ? ((Number) value).longValue() : null;
     }
 
     @Override
@@ -70,7 +70,7 @@ public class Section implements ConfigurationSection {
         if (element == null) return null;
 
         Object value = element.asPrimitive().getUnchecked();
-        return value instanceof Number number ? number.doubleValue() : null;
+        return value instanceof Number ? ((Number) value).doubleValue() : null;
     }
 
     @Override
@@ -79,7 +79,7 @@ public class Section implements ConfigurationSection {
         if (element == null) return null;
 
         Object value = element.asPrimitive().getUnchecked();
-        return value instanceof Number number ? number.floatValue() : null;
+        return value instanceof Number ? ((Number) value).floatValue() : null;
     }
 
     @Override
@@ -88,7 +88,7 @@ public class Section implements ConfigurationSection {
         if (element == null) return null;
 
         Object value = element.asPrimitive().getUnchecked();
-        return value instanceof Boolean bool ? bool : null;
+        return value instanceof Boolean ? (Boolean) value : null;
     }
 
     @Override
@@ -149,11 +149,11 @@ public class Section implements ConfigurationSection {
         YamlElement current = data.get(parts[0]);
 
         for (int i = 1; i < parts.length; i++) {
-            if (!(current instanceof YamlObject obj)) {
-                return null;
-            }
+            if (!(current instanceof YamlObject)) return null;
 
+            YamlObject obj = (YamlObject) current;
             current = obj.get(parts[i]);
+
             if (current == null) {
                 return null;
             }

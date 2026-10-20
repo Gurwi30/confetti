@@ -15,6 +15,7 @@ import org.yaml.snakeyaml.representer.Representer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class YamlElementRepresenter extends Representer {
 
@@ -27,13 +28,15 @@ public class YamlElementRepresenter extends Representer {
     }
 
     private Node representYamlElement(@NotNull YamlElement element) {
-        return switch (element) {
-            case YamlPrimitive primitive -> representScalar(primitive);
-            case YamlArray array -> representSequence(Tag.SEQ, array.getElements(), getDefaultFlowStyle());
-            case YamlObject object -> representMapping(object);
+        if (element instanceof YamlPrimitive) {
+            return representScalar((YamlPrimitive) element);
+        } else if (element instanceof YamlArray) {
+            return representSequence(Tag.SEQ, ((YamlArray) element).getElements(), getDefaultFlowStyle());
+        } else if (element instanceof YamlObject) {
+            return representMapping((YamlObject) element);
+        }
 
-            default -> throw new IllegalStateException("Unexpected value: " + element);
-        };
+        throw new IllegalStateException("Unexpected value: " + element);
     }
 
     private Node representScalar(@NotNull YamlPrimitive primitive) {
@@ -51,7 +54,7 @@ public class YamlElementRepresenter extends Representer {
     private @NotNull Node representMapping(@NotNull YamlObject object) {
         List<NodeTuple> valueList = new ArrayList<>();
 
-        for (var entry : object.getData().entrySet()) {
+        for (Map.Entry<String, YamlElement> entry : object.getData().entrySet()) {
             Node keyNode = representData(entry.getKey());
             Node valueNode = representYamlElement(entry.getValue());
             valueList.add(new NodeTuple(keyNode, valueNode));

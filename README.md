@@ -2,12 +2,12 @@
 
 A lightweight YAML configuration library for Java, built on top of SnakeYAML.
 
-[![Java](https://img.shields.io/badge/Java-21%2B-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](https://www.java.com/)
+[![Java](https://img.shields.io/badge/Java-8%2B-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](https://www.java.com/)
 [![SnakeYAML](https://img.shields.io/badge/SnakeYAML-2.4-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](https://bitbucket.org/snakeyaml/snakeyaml)
 [![License](https://img.shields.io/badge/License-MIT-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](LICENSE)
 
 [![Documentation](https://docs.gurwi.dev/api/v1/badge)](https://docs.gurwi.dev/confetti)
-[![Maven Central](https://img.shields.io/badge/Maven%20Central-0.1.8-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](https://central.sonatype.com/artifact/dev.gurwi/confetti)
+[![Maven Central](https://img.shields.io/badge/Maven%20Central-0.1.9-030711?style=for-the-badge\&labelColor=030711\&color=0b1220)](https://central.sonatype.com/artifact/dev.gurwi/confetti)
 
 ## Overview
 
@@ -40,7 +40,7 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.gurwi:confetti:0.1.8")
+    implementation("dev.gurwi:confetti:0.1.9")
 }
 ```
 
@@ -50,7 +50,7 @@ dependencies {
 <dependency>
     <groupId>dev.gurwi</groupId>
     <artifactId>confetti</artifactId>
-    <version>0.1.8</version>
+    <version>0.1.9</version>
 </dependency>
 ```
 
